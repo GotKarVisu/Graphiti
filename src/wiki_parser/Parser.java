@@ -9,8 +9,8 @@ import org.jsoup.select.Elements;
 
 public class Parser {
 	public static void main(String[] args) {
-		//String testURL = "http://de.wikipedia.org/wiki/Bauhaus-Universit%C3%A4t_Weimar";
-		String testURL = "http://de.wikipedia.org/wiki/Deutschland";
+		/*String testURL = "http://de.wikipedia.org/wiki/Bauhaus-Universit%C3%A4t_Weimar";
+		//String testURL = "http://de.wikipedia.org/wiki/Deutschland";
 		Elements elements = parse(testURL);
 		ArrayList<Pair> links = makeList(elements);
 		//printList(links);
@@ -21,11 +21,11 @@ public class Parser {
 		System.out.println(links.size());
 		links = clearThisArticle(links, testURL);
 		System.out.println(links.size());
-		System.out.println(links.size());
 		links = clearDoubled(links);
-		printList(links);
+		System.out.println(links.size());
+		printList(links);*/
 	}
-	public static Elements parse(String inURL) {
+	private static Elements parse(String inURL) {
 		String url = inURL;
 		Document doc = null;
 		try {
@@ -52,13 +52,13 @@ public class Parser {
 		}
 		return liste;
 	}
-	public static void printList(ArrayList<Pair> l) {
+	private static void printList(ArrayList<Pair> l) {
 		for(Pair p : l) {
 			System.out.println(p.titel + " -- " + p.url);
 		}
 	}
 	// Entfernt alle Links, die doppelt vorkommen
-	public static ArrayList<Pair> clearDoubled(ArrayList<Pair> l) {
+	private static ArrayList<Pair> clearDoubled(ArrayList<Pair> l) {
 		ArrayList<Pair> tmp = new ArrayList<Pair>();
 		for(Pair p1 : l) {
 			for(Pair p2 : l) {
@@ -67,11 +67,11 @@ public class Parser {
 				}
 			}
 		}
-		l.remove(tmp);
+		l.removeAll(tmp);
 		return l;
 	}
 	// Entfernt alle Links, die nicht auf einen Wikipedia Artikel verweisen
-	public static ArrayList<Pair> clearNoArticle(ArrayList<Pair> l) {
+	private static ArrayList<Pair> clearNoArticle(ArrayList<Pair> l) {
 		ArrayList<Pair> tmp = new ArrayList<Pair>();
 		for(Pair p : l) {
 			if(!p.url.startsWith("http://de.wikipedia.org/wiki/")
@@ -89,7 +89,7 @@ public class Parser {
 		return l;
 	}
 	// Entfernt alle Links, die auf den Aktuellen Artikel verweisen
-	public static ArrayList<Pair> clearThisArticle(ArrayList<Pair> l, String url) {
+	private static ArrayList<Pair> clearThisArticle(ArrayList<Pair> l, String url) {
 		ArrayList<Pair> tmp = new ArrayList<Pair>();
 		for(Pair p : l) {
 			if(p.url.startsWith(url)) {
@@ -98,5 +98,14 @@ public class Parser {
 		}
 		l.removeAll(tmp);
 		return l;
+	}
+	public static ArrayList<Pair> getList(String url) {
+		Elements elements = parse(url);
+		ArrayList<Pair> links = makeList(elements);
+		links = clearDoubled(links);
+		links = clearNoArticle(links);
+		links = clearThisArticle(links, url);
+		links = clearDoubled(links);
+		return links;
 	}
 }
