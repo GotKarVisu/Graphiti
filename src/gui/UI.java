@@ -1,84 +1,239 @@
 package gui;
 
+import wiki_parser.Pair;
+import wiki_parser.Parser;
+ 
+import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Container;
 import java.awt.Dimension;
-import java.awt.Rectangle;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GridLayout;
 import java.awt.Shape;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Point2D;
-
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import javax.swing.BorderFactory;
+import javax.swing.JApplet;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
-
-import org.apache.commons.collections15.Transformer;
-
-import edu.uci.ics.jung.algorithms.layout.CircleLayout;
-import edu.uci.ics.jung.algorithms.layout.Layout;
-import edu.uci.ics.jung.graph.DirectedSparseGraph;
-import edu.uci.ics.jung.visualization.RenderContext;
+import javax.swing.JPanel;
+import javax.swing.JToggleButton;
+import org.apache.commons.collections15.Factory;
+import org.apache.commons.collections15.functors.ConstantTransformer;
+import edu.uci.ics.jung.algorithms.layout.PolarPoint;
+import edu.uci.ics.jung.algorithms.layout.RadialTreeLayout;
+import edu.uci.ics.jung.algorithms.layout.TreeLayout;
+import edu.uci.ics.jung.graph.DirectedGraph;
+import edu.uci.ics.jung.graph.DirectedSparseMultigraph;
+import edu.uci.ics.jung.graph.Forest;
+import edu.uci.ics.jung.graph.DelegateForest;
+import edu.uci.ics.jung.graph.DelegateTree;
+import edu.uci.ics.jung.graph.Tree;
+import edu.uci.ics.jung.visualization.GraphZoomScrollPane;
+import edu.uci.ics.jung.visualization.Layer;
+import edu.uci.ics.jung.visualization.VisualizationServer;
 import edu.uci.ics.jung.visualization.VisualizationViewer;
+import edu.uci.ics.jung.visualization.control.CrossoverScalingControl;
 import edu.uci.ics.jung.visualization.control.DefaultModalGraphMouse;
 import edu.uci.ics.jung.visualization.control.ModalGraphMouse;
-import edu.uci.ics.jung.visualization.renderers.Renderer;
-import edu.uci.ics.jung.visualization.transform.shape.GraphicsDecorator;
+import edu.uci.ics.jung.visualization.control.ScalingControl;
+import edu.uci.ics.jung.visualization.decorators.EdgeShape;
+import edu.uci.ics.jung.visualization.decorators.ToStringLabeller;
+import edu.uci.ics.jung.visualization.layout.LayoutTransition;
+import edu.uci.ics.jung.visualization.util.Animator;
+ 
+@SuppressWarnings("serial")
+public class UI extends JApplet {
 
-public class UI {
-  public static void main(String[] args) {
-    DirectedSparseGraph<String, String> g = new DirectedSparseGraph<String, String>();
-    g.addVertex("Square");
-    g.addVertex("Rectangle");
-    g.addVertex("Circle");
-    g.addEdge("Edge1", "Square", "Rectangle");
-    g.addEdge("Edge2", "Square", "Circle");
-    g.addEdge("Edge3", "Circle", "Square");
-    VisualizationViewer<String, String> vv =
-        new VisualizationViewer<String, String>(new CircleLayout<String, String>(g), new Dimension(400, 400));
+    Forest<String,Integer> graph;
+    Factory<DirectedGraph<String,Integer>> graphFactory = 
+        new Factory<DirectedGraph<String,Integer>>() {
+             public DirectedGraph<String, Integer> create() {
+                return new DirectedSparseMultigraph<String,Integer>();
+            }
+        };
+             
+    Factory<Tree<String,Integer>> treeFactory =
+        new Factory<Tree<String,Integer>> () {
+         public Tree<String, Integer> create() {
+            return new DelegateTree<String,Integer>(graphFactory);
+        }
+    };
+     
+    Factory<Integer> edgeFactory = new Factory<Integer>() {
+        int i=0;
+        public Integer create() {
+            return i++;
+        }};
+     
+    Factory<String> vertexFactory = new Factory<String>() {
+        int i=0;
+        public String create() {
+            return "V"+i++;
+        }};
 
-    vv.getRenderContext().setVertexLabelTransformer(new Transformer<String, String>() {
-      @Override
-      public String transform(String arg0) {
-        return arg0;
-      }
-    });
-    vv.getRenderContext().setEdgeLabelTransformer(new Transformer<String, String>() {
-      @Override
-      public String transform(String arg0) {
-        return arg0;
-      }
-    });
-
-    vv.getRenderer().setVertexRenderer(new MyRenderer());
-
-    final DefaultModalGraphMouse<String, Number> graphMouse = new DefaultModalGraphMouse<String, Number>();
-    graphMouse.setMode(ModalGraphMouse.Mode.PICKING);
-    vv.setGraphMouse(graphMouse);
-
-    JFrame frame = new JFrame();
-    frame.getContentPane().add(vv);
-    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-    frame.pack();
-    frame.setVisible(true);
-  }
-
-  static class MyRenderer implements Renderer.Vertex<String, String> {
-    @Override
-    public void paintVertex(RenderContext<String, String> rc, Layout<String, String> layout, String vertex) {
-      GraphicsDecorator graphicsContext = rc.getGraphicsContext();
-      Point2D center = layout.transform(vertex);
-      Shape shape = null;
-      Color color = null;
-      if(vertex.equals("Square")) {
-        shape = new Rectangle((int) center.getX() - 10, (int) center.getY() - 10, 20, 20);
-        color = new Color(127, 127, 0);
-      } else if(vertex.equals("Rectangle")) {
-        shape = new Rectangle((int) center.getX() - 10, (int) center.getY() - 20, 20, 40);
-        color = new Color(127, 0, 127);
-      } else if(vertex.equals("Circle")) {
-        shape = new Ellipse2D.Double(center.getX() - 10, center.getY() - 10, 20, 20);
-        color = new Color(0, 127, 127);
-      }
-      graphicsContext.setPaint(color);
-      graphicsContext.fill(shape);
+    VisualizationViewer<String,Integer> vv;
+    VisualizationServer.Paintable rings;
+    String root;
+    TreeLayout<String,Integer> treeLayout;
+    RadialTreeLayout<String,Integer> radialLayout;
+ 
+    public UI() {
+        graph = new DelegateForest<String,Integer>();
+        createTree();
+        treeLayout = new TreeLayout<String,Integer>(graph);
+        radialLayout = new RadialTreeLayout<String,Integer>(graph);
+        radialLayout.setSize(new Dimension(800,800));
+        vv =  new VisualizationViewer<String,Integer>(radialLayout, new Dimension(800,800));
+        vv.setBackground(Color.white);
+        vv.getRenderContext().setEdgeShapeTransformer(new EdgeShape.Line());
+        vv.getRenderContext().setVertexLabelTransformer(new ToStringLabeller());
+        // add a listener for ToolTips
+        vv.setVertexToolTipTransformer(new ToStringLabeller());
+        vv.getRenderContext().setArrowFillPaintTransformer(new ConstantTransformer(Color.lightGray));
+        rings = new Rings();
+ 
+        Container content = getContentPane();
+        final GraphZoomScrollPane panel = new GraphZoomScrollPane(vv);
+        content.add(panel);
+         
+        final DefaultModalGraphMouse graphMouse = new DefaultModalGraphMouse();
+ 
+        vv.setGraphMouse(graphMouse);
+         
+        JComboBox modeBox = graphMouse.getModeComboBox();
+        modeBox.addItemListener(graphMouse.getModeListener());
+        graphMouse.setMode(ModalGraphMouse.Mode.TRANSFORMING);
+ 
+        final ScalingControl scaler = new CrossoverScalingControl();
+ 
+        JButton plus = new JButton("+");
+        plus.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                scaler.scale(vv, 1.1f, vv.getCenter());
+            }
+        });
+        JButton minus = new JButton("-");
+        minus.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                scaler.scale(vv, 1/1.1f, vv.getCenter());
+            }
+        });
+         
+        JToggleButton radial = new JToggleButton("Radial");
+        radial.addItemListener(new ItemListener() {
+ 
+            public void itemStateChanged(ItemEvent e) {
+                if(e.getStateChange() == ItemEvent.SELECTED) {
+                     
+                    LayoutTransition<String,Integer> lt =
+                        new LayoutTransition<String,Integer>(vv, treeLayout, radialLayout);
+                    Animator animator = new Animator(lt);
+                    animator.start();
+                    vv.getRenderContext().getMultiLayerTransformer().setToIdentity();
+                    vv.addPreRenderPaintable(rings);
+                } else {
+                    LayoutTransition<String,Integer> lt =
+                        new LayoutTransition<String,Integer>(vv, radialLayout, treeLayout);
+                    Animator animator = new Animator(lt);
+                    animator.start();
+                    vv.getRenderContext().getMultiLayerTransformer().setToIdentity();
+                    vv.removePreRenderPaintable(rings);
+                }
+                vv.repaint();
+            }});
+ 
+        JPanel scaleGrid = new JPanel(new GridLayout(1,0));
+        scaleGrid.setBorder(BorderFactory.createTitledBorder("Zoom"));
+ 
+        JPanel controls = new JPanel();
+        scaleGrid.add(plus);
+        scaleGrid.add(minus);
+        controls.add(radial);
+        controls.add(scaleGrid);
+        controls.add(modeBox);
+ 
+        content.add(controls, BorderLayout.SOUTH);
     }
+     
+    class Rings implements VisualizationServer.Paintable {
+         
+        Collection<Double> depths;
+         
+        public Rings() {
+            depths = getDepths();
+        }
+         
+        private Collection<Double> getDepths() {
+            Set<Double> depths = new HashSet<Double>();
+            Map<String,PolarPoint> polarLocations = radialLayout.getPolarLocations();
+            for(String v : graph.getVertices()) {
+                PolarPoint pp = polarLocations.get(v);
+                depths.add(pp.getRadius());
+            }
+            return depths;
+        }
+ 
+        public void paint(Graphics g) {
+            g.setColor(Color.lightGray);
+            Graphics2D g2d = (Graphics2D)g;
+            Point2D center = radialLayout.getCenter();
+             Ellipse2D ellipse = new Ellipse2D.Double();
+            for(double d : depths) {
+                ellipse.setFrameFromDiagonal(center.getX()-d, center.getY()-d, center.getX()+d, center.getY()+d);
+                Shape shape = vv.getRenderContext().getMultiLayerTransformer().getTransformer(Layer.LAYOUT).transform(ellipse);
+                g2d.draw(shape);
+            }
+        }
+ 
+        public boolean useTransform() {
+            return true;
+        }
+    }
+     
+    private void createTree() {
+		Parser pars = new Parser();
+		ArrayList<Pair> l = pars.getList("http://de.wikipedia.org/wiki/Bauhaus-Universit%C3%A4t_Weimar");
+		graph.addVertex("Actual");
+		for(Pair pa : l) {
+	        graph.addEdge(edgeFactory.create(), "Actual", pa.titel);
+		}
 
-  }
+//        graph.addVertex("A0");
+//        graph.addEdge(edgeFactory.create(), "A0", "A1");
+//        graph.addEdge(edgeFactory.create(), "A0", "A2");
+//        graph.addEdge(edgeFactory.create(), "A0", "A3");
+//        graph.addVertex("B0");
+//        graph.addEdge(edgeFactory.create(), "B0", "B1");
+//        graph.addEdge(edgeFactory.create(), "B0", "B2");
+//        graph.addEdge(edgeFactory.create(), "B1", "B4");
+//        graph.addEdge(edgeFactory.create(), "B2", "B3");
+//        graph.addEdge(edgeFactory.create(), "B2", "B5");
+//        graph.addEdge(edgeFactory.create(), "B4", "B6");
+//        graph.addEdge(edgeFactory.create(), "B4", "B7");
+//        graph.addEdge(edgeFactory.create(), "B3", "B8");
+//        graph.addEdge(edgeFactory.create(), "B6", "B9");
+         
+    }
+ 
+    public static void main(String[] args) {
+        JFrame frame = new JFrame();
+        Container content = frame.getContentPane();
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+ 
+        content.add(new UI());
+        frame.pack();
+        frame.setVisible(true);
+    }
 }
