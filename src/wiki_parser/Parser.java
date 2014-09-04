@@ -17,22 +17,9 @@ public class Parser {
 	public static void main(String[] args) {
 		String testURL = "http://de.wikipedia.org/wiki/Bauhaus-Universit%C3%A4t_Weimar";
 		//String testURL = "http://de.wikipedia.org/wiki/Deutschland";
-		/*Elements elements = parse(testURL);
-		ArrayList<Pair> links = makeList(elements);
-		//printList(links);
-		System.out.println(links.size());
-		links = clearDoubled(links);
-		System.out.println(links.size());
-		links = clearNoArticle(links);
-		System.out.println(links.size());
-		links = clearThisArticle(links, testURL);
-		System.out.println(links.size());
-		links = clearDoubled(links);
-		System.out.println(links.size());
-		printList(links);*/
 		ArrayList<Pair> l = getList(testURL);
 		printList(l);
-		getHTMLText(testURL);
+		System.out.println(getTitle(testURL));
 	}
 	private static Elements parse(String inURL) {
 		String url = inURL;
@@ -120,18 +107,17 @@ public class Parser {
 		for(Pair p : links) {
 			p.count = countTitle(p.titel, text);
 		}
+		links = sortList(links);
 		return links;
 	}
 	private static String getHTMLText(String inURL) {
-
 		Document doc = null;
 		try {
 			doc = Jsoup.connect(inURL).get();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		String text = doc.body().text();
-		return text;
+		return doc.body().text();
 	}
 	private static int countTitle(String title, String site) {
 		int lastIndex = 0;
@@ -144,5 +130,30 @@ public class Parser {
 			}
 		}
 		return count;
+	}
+	private static ArrayList<Pair> sortList(ArrayList<Pair> l) {
+		ArrayList<Pair> tmp = new ArrayList<Pair>();
+		while(!l.isEmpty()) {
+			int i = 0;
+			Pair pNew = new Pair();
+			for(Pair p : l) {
+				if(p.count > i) {
+					i = p.count;
+					pNew = p;
+				}
+			}
+			tmp.add(pNew);
+			l.remove(pNew);
+		}
+		return tmp;
+	}
+	public static String getTitle(String url) {
+		Document doc = null;
+		try {
+			doc = Jsoup.connect(url).get();
+		} catch(IOException e) {
+			e.printStackTrace();
+		}
+		return doc.title();
 	}
 }
