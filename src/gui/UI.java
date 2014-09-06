@@ -159,7 +159,9 @@ public class UI extends JApplet {
             	if(tf.getText() != null) {
             		startUrl = tf.getText().toString();
             		System.out.println(startUrl);
-            		createTree(startUrl);
+            		
+            		//Diese Funktion wirft exceptions nachdem man auf GO! drückt
+            		//createTree(startUrl);
             		
             		//vv.repaint();
             	} else
@@ -264,7 +266,8 @@ public class UI extends JApplet {
 		Parser parser = new Parser(url);
 		ArrayList<Article> l = parser.getList();
 		String title = parser.getTitle();
-		graph.addVertex(title);
+		graph.addVertex(title); // Irgendwas funktioniert hier nicht so, wie es soll
+		
 		parser.printList();
 //		for(int x=0; x < 5; ++x) {
 //			Pair t = l.get(x);
