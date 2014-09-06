@@ -2,7 +2,7 @@ package gui;
 
 import wiki_parser.Pair;
 import wiki_parser.Parser;
- 
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
@@ -22,15 +22,20 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.Vector;
+
 import javax.swing.BorderFactory;
 import javax.swing.JApplet;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
 import javax.swing.JToggleButton;
+
 import org.apache.commons.collections15.Factory;
 import org.apache.commons.collections15.functors.ConstantTransformer;
+
 import edu.uci.ics.jung.algorithms.layout.PolarPoint;
 import edu.uci.ics.jung.algorithms.layout.RadialTreeLayout;
 import edu.uci.ics.jung.algorithms.layout.TreeLayout;
@@ -86,17 +91,18 @@ public class UI extends JApplet {
     VisualizationViewer<String,Integer> vv;
     VisualizationServer.Paintable rings;
     String root;
+    String startUrl = "https://de.wikipedia.org/wiki/Rijksweg_6";
     TreeLayout<String,Integer> treeLayout;
     RadialTreeLayout<String,Integer> radialLayout;
  
-    public UI(String url) {
+    public UI() {
         graph = new DelegateForest<String,Integer>();
         
-        createTree(url);
+        createTree(startUrl);
         treeLayout = new TreeLayout<String,Integer>(graph);
         radialLayout = new RadialTreeLayout<String,Integer>(graph);
         radialLayout.setSize(new Dimension(400,400));
-        vv =  new VisualizationViewer<String,Integer>(radialLayout, new Dimension(600,600));
+        vv =  new VisualizationViewer<String,Integer>(radialLayout, new Dimension(600,400));
         vv.setBackground(Color.white);
        
         vv.getRenderContext().setEdgeShapeTransformer(new EdgeShape.Line());
@@ -132,13 +138,39 @@ public class UI extends JApplet {
                 scaler.scale(vv, 1/1.1f, vv.getCenter());
             }
         });
-         
+ 
+        JButton vor = new JButton("Vor");
+        plus.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                //scaler.scale(vv, 1.1f, vv.getCenter());
+            }
+        });
+        JButton zurueck = new JButton("Zurück");
+        minus.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                //scaler.scale(vv, 1/1.1f, vv.getCenter());
+            }
+        });
+    	final JTextField tf = new JTextField("", 20);
+    	JButton button = new JButton("GO!");
+    	
+        button.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+            	if(tf.getText() != null) {
+            		startUrl = tf.getText();
+            		System.out.println(startUrl);
+            		createTree(startUrl);
+            		//vv.repaint();
+            	} else
+            		System.out.println("Keine URL eingegeben.");
+            }
+        });
+    	            
         JToggleButton radial = new JToggleButton("Radial");
         radial.addItemListener(new ItemListener() {
  
             public void itemStateChanged(ItemEvent e) {
                 if(e.getStateChange() == ItemEvent.SELECTED) {
-                     
                     LayoutTransition<String,Integer> lt =
                         new LayoutTransition<String,Integer>(vv, treeLayout, radialLayout);
                     Animator animator = new Animator(lt);
@@ -158,13 +190,20 @@ public class UI extends JApplet {
  
         JPanel scaleGrid = new JPanel(new GridLayout(1,0));
         scaleGrid.setBorder(BorderFactory.createTitledBorder("Zoom"));
+        JPanel historyGrid = new JPanel(new GridLayout(1,0));
+        historyGrid.setBorder(BorderFactory.createTitledBorder("Verlauf"));
  
         JPanel controls = new JPanel();
-        scaleGrid.add(plus);
-        scaleGrid.add(minus);
-        controls.add(radial);
+        //scaleGrid.add(plus);
+        //scaleGrid.add(minus);
+        historyGrid.add(vor);
+        historyGrid.add(zurueck);
+        controls.add(tf);
+        controls.add(button);
+        //controls.add(radial);
         controls.add(scaleGrid);
-        controls.add(modeBox);
+        controls.add(historyGrid);
+        //controls.add(modeBox);
  
         content.add(controls, BorderLayout.SOUTH);
     }
@@ -225,35 +264,31 @@ public class UI extends JApplet {
 		ArrayList<Pair> l = pars.getList(url);
 		String title = pars.getTitle(url);
 		graph.addVertex(title);
-		for(int x=0; x < 5; ++x) {
-			Pair t = l.get(x);
-			graph.addVertex(t.titel);
-			graph.addEdge(edgeFactory.create(), title, t.titel);
-			for(int y=0; y < 5; ++y) {
-				Parser pars2 = new Parser();
-				ArrayList<Pair> l2 = pars2.getList(t.url);
-				String title2 = pars2.getTitle(t.url);
-				Pair t2 = l2.get(y);
-				graph.addVertex(t2.titel);
-				graph.addEdge(edgeFactory.create(), title2, t2.titel);
-				for(int z=0; z < 5; ++z) {
-					Parser pars3 = new Parser();
-					ArrayList<Pair> l3 = pars3.getList(t2.url);
-					String title3 = pars3.getTitle(t2.url);
-					Pair t3 = l.get(z);
-					graph.addVertex(t3.titel);
-					graph.addEdge(edgeFactory.create(), title, t3.titel);
-				}
-			}
-		}
+//		for(int x=0; x < 5; ++x) {
+//			Pair t = l.get(x);
+//			graph.addEdge(edgeFactory.create(), title, t.titel);
+//			Parser pars2 = new Parser();
+//			ArrayList<Pair> l2 = pars2.getList(t.url);
+//			String title2 = pars2.getTitle(t.url);
+////			for(int y=0; y < 5; ++y) {
+////				Pair t2 = l2.get(y);
+////				graph.addEdge(edgeFactory.create(), title2, t2.titel);
+////				Parser pars3 = new Parser();
+////				ArrayList<Pair> l3 = pars3.getList(t2.url);
+////				String title3 = pars3.getTitle(t2.url);
+////				//for(int z=0; z < 5; ++z) {
+////				//	Pair t3 = l.get(z);
+////				//	graph.addEdge(edgeFactory.create(), title, t3.titel);
+////				//}
+////			}
+//		}
     }
     
     public static void main(String[] args) {
         JFrame frame = new JFrame();
         Container content = frame.getContentPane();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        String url = "http://de.wikipedia.org/wiki/Bauhaus-Universit%C3%A4t_Weimar";
-        content.add(new UI(url));
+        content.add(new UI());
         frame.pack();
         frame.setVisible(true);
     }

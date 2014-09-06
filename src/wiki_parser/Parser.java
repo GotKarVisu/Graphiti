@@ -154,6 +154,6 @@ public class Parser {
 		} catch(IOException e) {
 			e.printStackTrace();
 		}
-		return doc.title();
+		return doc.title().replaceAll(" - Wikipedia", "");
 	}
 }
