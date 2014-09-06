@@ -1,11 +1,5 @@
 package wiki_parser;
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 
 import org.jsoup.Jsoup;
@@ -14,112 +8,126 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 public class Parser {
-	public static void main(String[] args) {
-		String testURL = "http://de.wikipedia.org/wiki/Bauhaus-Universit%C3%A4t_Weimar";
-		//String testURL = "http://de.wikipedia.org/wiki/Deutschland";
-		ArrayList<Pair> l = getList(testURL);
-		printList(l);
-		System.out.println(getTitle(testURL));
+	private String url;
+	private String title;
+	private ArrayList<Article> list;
+	private Document doc;
+	
+	
+	public Parser() {
+		this.url = "";
+		this.title = "";
+		this.list = new ArrayList<Article>();
+		this.doc = null;
 	}
-	private static Elements parse(String inURL) {
-		String url = inURL;
-		Document doc = null;
+	public Parser(String inUrl) {
+		this.url = inUrl;
+		this.title = "";
+		this.list = new ArrayList<Article>();
+		this.doc = null;
+		parse();
+	}
+	
+	public Parser(Parser cpy) {
+		this.url = cpy.url;
+		this.title = cpy.title;
+		this.list = cpy.list;
+		this.doc = cpy.doc;
+	}
+	
+	public void parse() {
+		parseDocument();
+		makeList();
+		setTitle();
+		clearDoubled();
+		clearNoArticle();
+		clearThisArticle();
+		String text = getHTMLText();
+		for(Article a : list) {
+			a.count = countTitle(a.titel, text);
+		}
+		sortList();
+	}
+	
+	public void setUrl(String inUrl) {
+		this.url = inUrl;
+	}
+	public String getURL() {
+		return url;
+	}
+	public String getTitle() {
+		return title;
+	}
+	public ArrayList<Article> getList() {
+		return list;
+	}
+
+	private void parseDocument() {
 		try {
-			doc = Jsoup.connect(url).get();
+			this.doc = Jsoup.connect(this.url).get();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		Elements links = doc.select("a[href]");
-        return links;
 	}
-	private static String trim(String s, int width) {
-        if (s.length() > width)
-            return s.substring(0, width-1) + ".";
-        else
-            return s;
-    }
-	private static ArrayList<Pair> makeList(Elements el) {
-		ArrayList<Pair> liste = new ArrayList<Pair>();
+	
+	private void makeList() {
+		Elements el = getElements();
 		for(Element e : el) {
-			Pair tmp = new Pair();
-			tmp.url = e.attr("abs:href");
-			tmp.titel = trim(e.text(), 100);
-			liste.add(tmp);
-		}
-		return liste;
-	}
-	private static void printList(ArrayList<Pair> l) {
-		for(Pair p : l) {
-			System.out.println(p.titel + " -- " + p.url + "  --  " + p.count);
+			Article a = new Article();
+			a.url = e.attr("abs:href");
+			a.titel = trim(e.text(), 100);
+			this.list.add(a);
 		}
 	}
+	
+	private void setTitle() {
+		this.title = this.doc.title().replaceAll(" – Wikipedia", "");
+	}
+	
 	// Entfernt alle Links, die doppelt vorkommen
-	private static ArrayList<Pair> clearDoubled(ArrayList<Pair> l) {
-		ArrayList<Pair> tmp = new ArrayList<Pair>();
-		for(Pair p1 : l) {
-			for(Pair p2 : l) {
-				if(p1 != p2 && p1.url.equals(p2.url)) {
-					tmp.add(p2);
+	private void clearDoubled() {
+		ArrayList<Article> tmp = new ArrayList<Article>();
+		for(Article a1 : this.list) {
+			for(Article a2 : this.list) {
+				if(a1 != a2 && a1.url.equals(a2.url)) {
+					tmp.add(a2);
 				}
 			}
 		}
-		l.removeAll(tmp);
-		return l;
+		this.list.removeAll(tmp);
 	}
+
 	// Entfernt alle Links, die nicht auf einen Wikipedia Artikel verweisen
-	private static ArrayList<Pair> clearNoArticle(ArrayList<Pair> l) {
-		ArrayList<Pair> tmp = new ArrayList<Pair>();
-		for(Pair p : l) {
-			if(!p.url.startsWith("http://de.wikipedia.org/wiki/")
-					|| p.url.startsWith("http://de.wikipedia.org/wiki/Datei")
-					|| p.url.startsWith("http://de.wikipedia.org/wiki/Spezial")
-					|| p.url.startsWith("http://de.wikipedia.org/wiki/Hilfe")
-					|| p.url.startsWith("http://de.wikipedia.org/wiki/Wikipedia")
-					|| p.url.startsWith("http://de.wikipedia.org/wiki/Portal")
-					|| p.url.startsWith("http://de.wikipedia.org/wiki/Kategorie")
-					|| p.url.startsWith("http://de.wikipedia.org/wiki/Diskussion")
-					|| p.titel.length() < 3) {
-				tmp.add(p);
+	private void clearNoArticle() {
+		ArrayList<Article> tmp = new ArrayList<Article>();
+		for(Article a : this.list) {
+			if(!a.url.startsWith("http://de.wikipedia.org/wiki/")
+					|| a.url.startsWith("http://de.wikipedia.org/wiki/Datei")
+					|| a.url.startsWith("http://de.wikipedia.org/wiki/Spezial")
+					|| a.url.startsWith("http://de.wikipedia.org/wiki/Hilfe")
+					|| a.url.startsWith("http://de.wikipedia.org/wiki/Wikipedia")
+					|| a.url.startsWith("http://de.wikipedia.org/wiki/Portal")
+					|| a.url.startsWith("http://de.wikipedia.org/wiki/Kategorie")
+					|| a.url.startsWith("http://de.wikipedia.org/wiki/Diskussion")
+					|| a.titel.length() < 3) {
+				tmp.add(a);
 			}
 		}
-		l.removeAll(tmp);
-		return l;
+		this.list.removeAll(tmp);
 	}
+
 	// Entfernt alle Links, die auf den Aktuellen Artikel verweisen
-	private static ArrayList<Pair> clearThisArticle(ArrayList<Pair> l, String url) {
-		ArrayList<Pair> tmp = new ArrayList<Pair>();
-		for(Pair p : l) {
-			if(p.url.startsWith(url)) {
-				tmp.add(p);
+	private void clearThisArticle() {
+		ArrayList<Article> tmp = new ArrayList<Article>();
+		for(Article a : this.list) {
+			if(a.url.startsWith(this.url)) {
+				tmp.add(a);
 			}
 		}
-		l.removeAll(tmp);
-		return l;
+		this.list.removeAll(tmp);
 	}
-	public static ArrayList<Pair> getList(String url) {
-		Elements elements = parse(url);
-		ArrayList<Pair> links = makeList(elements);
-		links = clearDoubled(links);
-		links = clearNoArticle(links);
-		links = clearThisArticle(links, url);
-		links = clearDoubled(links);
-		String text = getHTMLText(url);
-		for(Pair p : links) {
-			p.count = countTitle(p.titel, text);
-		}
-		links = sortList(links);
-		return links;
-	}
-	private static String getHTMLText(String inURL) {
-		Document doc = null;
-		try {
-			doc = Jsoup.connect(inURL).get();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return doc.body().text();
-	}
-	private static int countTitle(String title, String site) {
+	
+	private int countTitle(String title, String site) {
 		int lastIndex = 0;
 		int count = 0;
 		while(lastIndex != -1) {
@@ -131,29 +139,43 @@ public class Parser {
 		}
 		return count;
 	}
-	private static ArrayList<Pair> sortList(ArrayList<Pair> l) {
-		ArrayList<Pair> tmp = new ArrayList<Pair>();
-		while(!l.isEmpty()) {
+	
+	private void sortList() {
+		ArrayList<Article> tmp = new ArrayList<Article>();
+		while(!this.list.isEmpty()) {
 			int i = 0;
-			Pair pNew = new Pair();
-			for(Pair p : l) {
-				if(p.count > i) {
-					i = p.count;
-					pNew = p;
+			Article pNew = new Article();
+			for(Article a : this.list) {
+				if(a.count > i) {
+					i = a.count;
+					pNew = a;
 				}
 			}
 			tmp.add(pNew);
-			l.remove(pNew);
+			this.list.remove(pNew);
 		}
-		return tmp;
+		this.list = tmp;
 	}
-	public static String getTitle(String url) {
-		Document doc = null;
-		try {
-			doc = Jsoup.connect(url).get();
-		} catch(IOException e) {
-			e.printStackTrace();
+	
+	private Elements getElements() {
+		Elements links = this.doc.select("a[href]");
+        return links;
+	}
+	
+	private String trim(String s, int width) {
+        if (s.length() > width)
+            return s.substring(0, width-1) + ".";
+        else
+            return s;
+    }
+
+	public void printList() {
+		for(Article a : this.list) {
+			System.out.println(a.titel + " -- " + a.url + "  --  " + a.count);
 		}
-		return doc.title().replaceAll(" - Wikipedia", "");
+	}
+
+	private String getHTMLText() {
+		return this.doc.body().text();
 	}
 }

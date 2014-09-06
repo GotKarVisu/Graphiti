@@ -1,6 +1,6 @@
 package gui;
 
-import wiki_parser.Pair;
+import wiki_parser.Article;
 import wiki_parser.Parser;
 
 import java.awt.BorderLayout;
@@ -145,21 +145,22 @@ public class UI extends JApplet {
                 //scaler.scale(vv, 1.1f, vv.getCenter());
             }
         });
-        JButton zurueck = new JButton("Zurück");
+        JButton zurueck = new JButton("Zurueck");
         minus.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 //scaler.scale(vv, 1/1.1f, vv.getCenter());
             }
         });
-    	final JTextField tf = new JTextField("", 20);
+    	final JTextField tf  = new JTextField("", 20);
     	JButton button = new JButton("GO!");
     	
         button.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
             	if(tf.getText() != null) {
-            		startUrl = tf.getText();
+            		startUrl = tf.getText().toString();
             		System.out.println(startUrl);
             		createTree(startUrl);
+            		
             		//vv.repaint();
             	} else
             		System.out.println("Keine URL eingegeben.");
@@ -260,10 +261,11 @@ public class UI extends JApplet {
     }*/
      
     private void createTree(String url) {
-		Parser pars = new Parser();
-		ArrayList<Pair> l = pars.getList(url);
-		String title = pars.getTitle(url);
+		Parser parser = new Parser(url);
+		ArrayList<Article> l = parser.getList();
+		String title = parser.getTitle();
 		graph.addVertex(title);
+		parser.printList();
 //		for(int x=0; x < 5; ++x) {
 //			Pair t = l.get(x);
 //			graph.addEdge(edgeFactory.create(), title, t.titel);
