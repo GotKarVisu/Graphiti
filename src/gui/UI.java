@@ -89,14 +89,16 @@ public class UI extends JApplet {
     TreeLayout<String,Integer> treeLayout;
     RadialTreeLayout<String,Integer> radialLayout;
  
-    public UI() {
+    public UI(String url) {
         graph = new DelegateForest<String,Integer>();
-        createTree();
+        
+        createTree(url);
         treeLayout = new TreeLayout<String,Integer>(graph);
         radialLayout = new RadialTreeLayout<String,Integer>(graph);
-        radialLayout.setSize(new Dimension(800,800));
-        vv =  new VisualizationViewer<String,Integer>(radialLayout, new Dimension(800,800));
+        radialLayout.setSize(new Dimension(400,400));
+        vv =  new VisualizationViewer<String,Integer>(radialLayout, new Dimension(600,600));
         vv.setBackground(Color.white);
+       
         vv.getRenderContext().setEdgeShapeTransformer(new EdgeShape.Line());
         vv.getRenderContext().setVertexLabelTransformer(new ToStringLabeller());
         // add a listener for ToolTips
@@ -201,38 +203,57 @@ public class UI extends JApplet {
             return true;
         }
     }
+    
+    /*private void drawChildren(String url, int actualdepth) {
+    	int depth = 4;
+    	if(depth >= actualdepth) {
+			Parser pars = new Parser();
+			ArrayList<Pair> l = pars.getList(url);
+			String title = pars.getTitle(url);
+			graph.addVertex(title);
+			for(int x=0; x < 5; ++x) {
+				Pair t = l.get(x);
+				graph.addVertex(t.titel);
+				graph.addEdge(edgeFactory.create(), title, t.titel);
+				drawChildren(t.url, ++actualdepth);
+			}
+    	}
+    }*/
      
-    private void createTree() {
+    private void createTree(String url) {
 		Parser pars = new Parser();
-		ArrayList<Pair> l = pars.getList("http://de.wikipedia.org/wiki/Bauhaus-Universit%C3%A4t_Weimar");
-		graph.addVertex("Actual");
-		for(Pair pa : l) {
-	        graph.addEdge(edgeFactory.create(), "Actual", pa.titel);
+		ArrayList<Pair> l = pars.getList(url);
+		String title = pars.getTitle(url);
+		graph.addVertex(title);
+		for(int x=0; x < 5; ++x) {
+			Pair t = l.get(x);
+			graph.addVertex(t.titel);
+			graph.addEdge(edgeFactory.create(), title, t.titel);
+			for(int y=0; y < 5; ++y) {
+				Parser pars2 = new Parser();
+				ArrayList<Pair> l2 = pars2.getList(t.url);
+				String title2 = pars2.getTitle(t.url);
+				Pair t2 = l2.get(y);
+				graph.addVertex(t2.titel);
+				graph.addEdge(edgeFactory.create(), title2, t2.titel);
+				for(int z=0; z < 5; ++z) {
+					Parser pars3 = new Parser();
+					ArrayList<Pair> l3 = pars3.getList(t2.url);
+					String title3 = pars3.getTitle(t2.url);
+					Pair t3 = l.get(z);
+					graph.addVertex(t3.titel);
+					graph.addEdge(edgeFactory.create(), title, t3.titel);
+				}
+			}
 		}
-
-//        graph.addVertex("A0");
-//        graph.addEdge(edgeFactory.create(), "A0", "A1");
-//        graph.addEdge(edgeFactory.create(), "A0", "A2");
-//        graph.addEdge(edgeFactory.create(), "A0", "A3");
-//        graph.addVertex("B0");
-//        graph.addEdge(edgeFactory.create(), "B0", "B1");
-//        graph.addEdge(edgeFactory.create(), "B0", "B2");
-//        graph.addEdge(edgeFactory.create(), "B1", "B4");
-//        graph.addEdge(edgeFactory.create(), "B2", "B3");
-//        graph.addEdge(edgeFactory.create(), "B2", "B5");
-//        graph.addEdge(edgeFactory.create(), "B4", "B6");
-//        graph.addEdge(edgeFactory.create(), "B4", "B7");
-//        graph.addEdge(edgeFactory.create(), "B3", "B8");
-//        graph.addEdge(edgeFactory.create(), "B6", "B9");
-         
     }
- 
+    
     public static void main(String[] args) {
         JFrame frame = new JFrame();
         Container content = frame.getContentPane();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
- 
-        content.add(new UI());
+        String url = "http://de.wikipedia.org/wiki/Bauhaus-Universit%C3%A4t_Weimar";
+        content.add(new UI(url));
         frame.pack();
         frame.setVisible(true);
     }
