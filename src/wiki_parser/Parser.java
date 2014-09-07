@@ -35,22 +35,19 @@ public class Parser {
 	}
 	
 	public void parse() {
+		removeHttps();
 		parseDocument();
 		makeList();
-		System.out.println("makelist - " + list.size());
 		setTitle();
-		System.out.println("setTitle - " + list.size());
 		clearDoubled();
-		System.out.println("doubled - " + list.size());
 		clearNoArticle();
-		System.out.println("noArticle - " + list.size());
 		clearThisArticle();
 		String text = getHTMLText();
 		for(Article a : list) {
 			a.count = countTitle(a.titel, text);
 		}
 		sortList();
-		System.out.println("final - " + list.size());
+		System.out.println(list.size());
 	}
 	
 	public void setUrl(String inUrl) {
@@ -180,5 +177,10 @@ public class Parser {
 
 	private String getHTMLText() {
 		return this.doc.body().text();
+	}
+	
+	private void removeHttps() {
+		this.url = this.url.toLowerCase();
+		this.url = this.url.replace("https", "http");
 	}
 }

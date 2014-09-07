@@ -91,7 +91,7 @@ public class UI extends JApplet {
     VisualizationViewer<String,Integer> vv;
     VisualizationServer.Paintable rings;
     String root;
-    String startUrl = "http://de.wikipedia.org/wiki/Weimar";
+    String startUrl = "Https://de.wikipedia.org/wiki/Weimar";
     TreeLayout<String,Integer> treeLayout;
     RadialTreeLayout<String,Integer> radialLayout;
  
