@@ -91,11 +91,11 @@ public class UI extends JApplet {
     VisualizationViewer<String,Integer> vv;
     VisualizationServer.Paintable rings;
     String root;
-    String startUrl = "https://de.wikipedia.org/wiki/Rijksweg_6";
+    String startUrl = "https://de.wikipedia.org/wiki/Weimar";
     TreeLayout<String,Integer> treeLayout;
     RadialTreeLayout<String,Integer> radialLayout;
  
-    public UI() {
+    public UI(JFrame frame) {
         graph = new DelegateForest<String,Integer>();
         
         createTree(startUrl);
@@ -159,11 +159,9 @@ public class UI extends JApplet {
             	if(tf.getText() != null) {
             		startUrl = tf.getText().toString();
             		System.out.println(startUrl);
-            		
-            		//Diese Funktion wirft exceptions nachdem man auf GO! drückt
             		//createTree(startUrl);
-            		
-            		//vv.repaint();
+                    content.add(new UI(frame));
+                    frame.pack();
             	} else
             		System.out.println("Keine URL eingegeben.");
             }
@@ -204,7 +202,7 @@ public class UI extends JApplet {
         controls.add(tf);
         controls.add(button);
         //controls.add(radial);
-        controls.add(scaleGrid);
+        //controls.add(scaleGrid);
         controls.add(historyGrid);
         //controls.add(modeBox);
  
@@ -266,34 +264,33 @@ public class UI extends JApplet {
 		Parser parser = new Parser(url);
 		ArrayList<Article> l = parser.getList();
 		String title = parser.getTitle();
-		graph.addVertex(title); // Irgendwas funktioniert hier nicht so, wie es soll
-		
+		graph.addVertex(title);
 		parser.printList();
-//		for(int x=0; x < 5; ++x) {
-//			Pair t = l.get(x);
-//			graph.addEdge(edgeFactory.create(), title, t.titel);
-//			Parser pars2 = new Parser();
-//			ArrayList<Pair> l2 = pars2.getList(t.url);
-//			String title2 = pars2.getTitle(t.url);
-////			for(int y=0; y < 5; ++y) {
-////				Pair t2 = l2.get(y);
-////				graph.addEdge(edgeFactory.create(), title2, t2.titel);
-////				Parser pars3 = new Parser();
-////				ArrayList<Pair> l3 = pars3.getList(t2.url);
-////				String title3 = pars3.getTitle(t2.url);
-////				//for(int z=0; z < 5; ++z) {
-////				//	Pair t3 = l.get(z);
-////				//	graph.addEdge(edgeFactory.create(), title, t3.titel);
-////				//}
-////			}
-//		}
+		for(int x=0; x < 5; ++x) {
+			Article t = l.get(x);
+			//graph.addEdge(edgeFactory.create(), title, t.titel);
+//			Parser pars2 = new Parser(t.url);
+//			ArrayList<Article> l2 = pars2.getList();
+//			String title2 = pars2.getTitle();
+//			for(int y=0; y < 5; ++y) {
+//				Article t2 = l2.get(y);
+//				graph.addEdge(edgeFactory.create(), title2, t2.titel);
+//				//Parser pars3 = new Parser(t2.url);
+//				//ArrayList<Article> l3 = pars3.getList();
+//				//String title3 = pars3.getTitle();
+//				//for(int z=0; z < 5; ++z) {
+//				//	Pair t3 = l.get(z);
+//				//	graph.addEdge(edgeFactory.create(), title, t3.titel);
+//				//}
+//			}
+		}
     }
     
     public static void main(String[] args) {
         JFrame frame = new JFrame();
         Container content = frame.getContentPane();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        content.add(new UI());
+        content.add(new UI(frame));
         frame.pack();
         frame.setVisible(true);
     }

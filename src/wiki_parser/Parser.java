@@ -13,7 +13,6 @@ public class Parser {
 	private ArrayList<Article> list;
 	private Document doc;
 	
-	
 	public Parser() {
 		this.url = "";
 		this.title = "";
@@ -47,6 +46,7 @@ public class Parser {
 			a.count = countTitle(a.titel, text);
 		}
 		sortList();
+		System.out.println(list.size());
 	}
 	
 	public void setUrl(String inUrl) {
@@ -97,7 +97,6 @@ public class Parser {
 		this.list.removeAll(tmp);
 	}
 
-	// Entfernt alle Links, die nicht auf einen Wikipedia Artikel verweisen
 	private void clearNoArticle() {
 		ArrayList<Article> tmp = new ArrayList<Article>();
 		for(Article a : this.list) {
@@ -113,6 +112,7 @@ public class Parser {
 				tmp.add(a);
 			}
 		}
+		// FIXME - Leere Liste, nach Saeuberung
 		this.list.removeAll(tmp);
 	}
 
@@ -158,8 +158,7 @@ public class Parser {
 	}
 	
 	private Elements getElements() {
-		Elements links = this.doc.select("a[href]");
-        return links;
+        return this.doc.select("a[href]");
 	}
 	
 	private String trim(String s, int width) {
