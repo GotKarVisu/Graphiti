@@ -53,13 +53,13 @@ public class Parser {
 		this.url = inUrl;
 	}
 	public String getURL() {
-		return url;
+		return this.url;
 	}
 	public String getTitle() {
-		return title;
+		return this.title;
 	}
 	public ArrayList<Article> getList() {
-		return list;
+		return this.list;
 	}
 
 	private void parseDocument() {
