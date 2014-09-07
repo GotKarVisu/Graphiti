@@ -91,7 +91,7 @@ public class UI extends JApplet {
     VisualizationViewer<String,Integer> vv;
     VisualizationServer.Paintable rings;
     String root;
-    String startUrl = "https://de.wikipedia.org/wiki/Weimar";
+    String startUrl = "http://de.wikipedia.org/wiki/Weimar";
     TreeLayout<String,Integer> treeLayout;
     RadialTreeLayout<String,Integer> radialLayout;
  
@@ -160,8 +160,8 @@ public class UI extends JApplet {
             		startUrl = tf.getText().toString();
             		System.out.println(startUrl);
             		//createTree(startUrl);
-                    content.add(new UI(frame));
-                    frame.pack();
+                    //content.add(new UI(frame));
+                    //frame.pack();
             	} else
             		System.out.println("Keine URL eingegeben.");
             }
@@ -267,7 +267,7 @@ public class UI extends JApplet {
 		graph.addVertex(title);
 		parser.printList();
 		for(int x=0; x < 5; ++x) {
-			Article t = l.get(x);
+			//Article t = l.get(x);
 			//graph.addEdge(edgeFactory.create(), title, t.titel);
 //			Parser pars2 = new Parser(t.url);
 //			ArrayList<Article> l2 = pars2.getList();
