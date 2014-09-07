@@ -81,7 +81,7 @@ public class Parser {
 	}
 	
 	private void setTitle() {
-		this.title = this.doc.title().replaceAll(" – Wikipedia", "");
+		this.title = this.doc.title().replaceAll(" â€“ Wikipedia", "");
 	}
 	
 	// Entfernt alle Links, die doppelt vorkommen
