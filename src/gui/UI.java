@@ -11,6 +11,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridLayout;
 import java.awt.Shape;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -22,7 +23,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.Vector;
 
 import javax.swing.BorderFactory;
 import javax.swing.JApplet;
@@ -30,6 +30,7 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JTextField;
 import javax.swing.JToggleButton;
 
@@ -91,36 +92,39 @@ public class UI extends JApplet {
     VisualizationViewer<String,Integer> vv;
     VisualizationServer.Paintable rings;
     String root;
-    String startUrl = "http://de.wikipedia.org/wiki/Weimar";
+    String startUrl = null;
     TreeLayout<String,Integer> treeLayout;
     RadialTreeLayout<String,Integer> radialLayout;
+    JProgressBar progressBar;
  
     public UI(JFrame frame) {
         graph = new DelegateForest<String,Integer>();
-        
-        createTree(startUrl);
+        progressBar = new JProgressBar();
+
         treeLayout = new TreeLayout<String,Integer>(graph);
         radialLayout = new RadialTreeLayout<String,Integer>(graph);
-        radialLayout.setSize(new Dimension(400,400));
-        vv =  new VisualizationViewer<String,Integer>(radialLayout, new Dimension(600,400));
+        Toolkit tk = Toolkit.getDefaultToolkit();  
+        int xSize = ((int) tk.getScreenSize().getWidth());  
+        int ySize = ((int) tk.getScreenSize().getHeight());  
+        radialLayout.setSize(new Dimension(xSize-500,ySize-500));
+        vv =  new VisualizationViewer<String,Integer>(radialLayout, new Dimension(xSize-200,ySize-200));
         vv.setBackground(Color.white);
        
-        vv.getRenderContext().setEdgeShapeTransformer(new EdgeShape.Line());
-        vv.getRenderContext().setVertexLabelTransformer(new ToStringLabeller());
-        // add a listener for ToolTips
-        vv.setVertexToolTipTransformer(new ToStringLabeller());
+        vv.getRenderContext().setEdgeShapeTransformer(new EdgeShape.Line<String, Integer>());
+        vv.getRenderContext().setVertexLabelTransformer(new ToStringLabeller<String>());
+        vv.setVertexToolTipTransformer(new ToStringLabeller<String>());
         vv.getRenderContext().setArrowFillPaintTransformer(new ConstantTransformer(Color.lightGray));
         rings = new Rings();
- 
+
         Container content = getContentPane();
         final GraphZoomScrollPane panel = new GraphZoomScrollPane(vv);
         content.add(panel);
          
-        final DefaultModalGraphMouse graphMouse = new DefaultModalGraphMouse();
+        final DefaultModalGraphMouse<String, Integer> graphMouse = new DefaultModalGraphMouse<String, Integer>();
  
         vv.setGraphMouse(graphMouse);
          
-        JComboBox modeBox = graphMouse.getModeComboBox();
+        JComboBox<String> modeBox = graphMouse.getModeComboBox();
         modeBox.addItemListener(graphMouse.getModeListener());
         graphMouse.setMode(ModalGraphMouse.Mode.PICKING);
  
@@ -159,10 +163,12 @@ public class UI extends JApplet {
             	if(tf.getText() != null) {
             		startUrl = tf.getText().toString();
             		deleteTree();
+            		setProgress(1);
             		vv.removeAll();
             		createTree(startUrl);
             		radialLayout = new RadialTreeLayout<String,Integer>(graph);
-                    radialLayout.setSize(new Dimension(400,400));
+                    int ySize = ((int) tk.getScreenSize().getHeight());  
+                    radialLayout.setSize(new Dimension(ySize-50,ySize-100));
                     vv.setGraphLayout(radialLayout);
             		vv.repaint();
             	} else
@@ -196,6 +202,10 @@ public class UI extends JApplet {
         scaleGrid.setBorder(BorderFactory.createTitledBorder("Zoom"));
         JPanel historyGrid = new JPanel(new GridLayout(1,0));
         historyGrid.setBorder(BorderFactory.createTitledBorder("Verlauf"));
+
+        progressBar.setMaximum(100);
+        progressBar.setMinimum(0);
+        progressBar.setStringPainted(true);
  
         JPanel controls = new JPanel();
         //scaleGrid.add(plus);
@@ -210,45 +220,11 @@ public class UI extends JApplet {
         //controls.add(modeBox);
  
         content.add(controls, BorderLayout.SOUTH);
+        content.add(progressBar, BorderLayout.NORTH);
+        
+
     }
-         
-    class Rings implements VisualizationServer.Paintable {
-         
-        Collection<Double> depths;
-         
-        public Rings() {
-            depths = getDepths();
-        }
-         
-        private Collection<Double> getDepths() {
-            Set<Double> depths = new HashSet<Double>();
-            Map<String,PolarPoint> polarLocations = radialLayout.getPolarLocations();
-            for(String v : graph.getVertices()) {
-                PolarPoint pp = polarLocations.get(v);
-                depths.add(pp.getRadius());
-            }
-            return depths;
-        }
  
-        public void paint(Graphics g) {
-            g.setColor(Color.lightGray);
-            Graphics2D g2d = (Graphics2D)g;
-            Point2D center = radialLayout.getCenter();
-             Ellipse2D ellipse = new Ellipse2D.Double();
-            for(double d : depths) {
-                ellipse.setFrameFromDiagonal(center.getX()-d, center.getY()-d, center.getX()+d, center.getY()+d);
-                Shape shape = vv.getRenderContext().getMultiLayerTransformer().getTransformer(Layer.LAYOUT).transform(ellipse);
-                g2d.draw(shape);
-            }
-        }
- 
-        public boolean useTransform() {
-            return true;
-        }
-    }
-    
-    
-         
     private void createTree(String url) {
 		Parser parser = new Parser(url);
 		Parser pars2 = null;
@@ -262,11 +238,11 @@ public class UI extends JApplet {
 				graph.addVertex(l.get(x).titel);
 			}
 			graph.addEdge(edgeFactory.create(), title, l.get(x).titel);
-			
 			pars2.setUrl(l.get(x).url);
 			pars2.parse();
 			ArrayList<Article> l1 = pars2.getList();
-			for(int z=0; z<4; ++z) {
+			for(int z=0; z < 4; ++z) {
+				progressBar.setValue(x*z);
 				pars3 = new Parser();
 				pars3.setUrl(l.get(x).url);
 				pars3.parse();
@@ -278,7 +254,14 @@ public class UI extends JApplet {
 				System.out.println(x + " - " + z);
 			}
 			pars2 = null;
+			setProgress((x+1)*10);
 		}
+    }
+    
+    private void setProgress(int value) {
+		progressBar.setValue(value);
+		java.awt.Rectangle progressRect = progressBar.getBounds();
+		progressBar.paintImmediately(progressRect);
     }
     
     private boolean deleteTree() {
@@ -309,5 +292,36 @@ public class UI extends JApplet {
         content.add(new UI(frame));
         frame.pack();
         frame.setVisible(true);
+    }
+    
+    class Rings implements VisualizationServer.Paintable {
+        
+        Collection<Double> depths;
+         
+        public Rings() { depths = getDepths(); }
+         
+        private Collection<Double> getDepths() {
+            Set<Double> depths = new HashSet<Double>();
+            Map<String,PolarPoint> polarLocations = radialLayout.getPolarLocations();
+            for(String v : graph.getVertices()) {
+                PolarPoint pp = polarLocations.get(v);
+                depths.add(pp.getRadius());
+            }
+            return depths;
+        }
+ 
+        public void paint(Graphics g) {
+            g.setColor(Color.lightGray);
+            Graphics2D g2d = (Graphics2D)g;
+            Point2D center = radialLayout.getCenter();
+             Ellipse2D ellipse = new Ellipse2D.Double();
+            for(double d : depths) {
+                ellipse.setFrameFromDiagonal(center.getX()-d, center.getY()-d, center.getX()+d, center.getY()+d);
+                Shape shape = vv.getRenderContext().getMultiLayerTransformer().getTransformer(Layer.LAYOUT).transform(ellipse);
+                g2d.draw(shape);
+            }
+        }
+ 
+        public boolean useTransform() {  return true;  }
     }
 }
