@@ -157,9 +157,15 @@ public class UI extends JApplet {
         button.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
             	if(tf.getText() != null) {
-            		startUrl = tf.getText().toString();
-            		System.out.println(deleteTree());
-            		//createTree(startUrl);
+            		try {
+            			startUrl = tf.getText().toString();
+            		} catch(Exception ex) {
+            			System.out.println("hier isn error");
+            		}
+            		deleteTree();
+            		vv.removeAll();
+            		createTree(startUrl);
+            		vv.repaint();
             	} else
             		System.out.println("Keine URL eingegeben.");
             }
@@ -251,7 +257,7 @@ public class UI extends JApplet {
 		ArrayList<Article> l = parser.getList();
 		String title = parser.getTitle();
 		graph.addVertex(title);
-		for(int x=0; x < 5; ++x) {
+		for(int x=0; x < 2; ++x) {
 			pars2 = new Parser();
 			if(!graph.containsVertex(l.get(x).titel)) {
 				graph.addVertex(l.get(x).titel);
@@ -277,12 +283,22 @@ public class UI extends JApplet {
     }
     
     private boolean deleteTree() {
+    	System.out.println(graph.getEdgeCount());
+    	ArrayList<Integer> l = new ArrayList<Integer>();
+    	ArrayList<String> l2 = new ArrayList<String>();
     	for(Integer e : graph.getEdges()) {
-    		graph.removeEdge(e);
+    		l.add(e);
+    	}
+    	for(int i : l) {
+    		graph.removeEdge(i);
     	}
     	for(String v : graph.getVertices()) {
-    		graph.removeVertex(v);
+    		l2.add(v);
     	}
+    	for(String s : l2) {
+    		graph.removeVertex(s);
+    	}
+    	System.out.println(graph.getEdgeCount());
     	return true;
     	
     }
