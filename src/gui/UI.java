@@ -256,7 +256,7 @@ public class UI extends JApplet {
 		ArrayList<Article> l = parser.getList();
 		String title = parser.getTitle();
 		graph.addVertex(title);
-		for(int x=0; x < 2; ++x) {
+		for(int x=0; x < 10; ++x) {
 			pars2 = new Parser();
 			if(!graph.containsVertex(l.get(x).titel)) {
 				graph.addVertex(l.get(x).titel);
