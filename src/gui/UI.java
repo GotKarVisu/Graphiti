@@ -157,14 +157,13 @@ public class UI extends JApplet {
         button.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
             	if(tf.getText() != null) {
-            		try {
-            			startUrl = tf.getText().toString();
-            		} catch(Exception ex) {
-            			System.out.println("hier isn error");
-            		}
+            		startUrl = tf.getText().toString();
             		deleteTree();
             		vv.removeAll();
             		createTree(startUrl);
+            		radialLayout = new RadialTreeLayout<String,Integer>(graph);
+                    radialLayout.setSize(new Dimension(400,400));
+                    vv.setGraphLayout(radialLayout);
             		vv.repaint();
             	} else
             		System.out.println("Keine URL eingegeben.");
