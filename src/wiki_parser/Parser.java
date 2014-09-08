@@ -1,6 +1,7 @@
 package wiki_parser;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -111,18 +112,8 @@ public class Parser {
 		this.list.removeAll(tmp);
 	}
 	
-	//TODO: zählen optimieren
-	private int countTitle(String title, String site) {
-		int lastIndex = 0;
-		int count = 0;
-		while(lastIndex != -1) {
-			lastIndex = site.indexOf(title,lastIndex);
-			if(lastIndex != -1) {
-				count ++;
-				lastIndex += title.length();
-			}
-		}
-		return count;
+	private int countTitle(String substr, String str) {
+		return str.split(Pattern.quote(substr), -1).length - 1;
 	}
 	
 	private void sort(ArrayList<Article> x) {
