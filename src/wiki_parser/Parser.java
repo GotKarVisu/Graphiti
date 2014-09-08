@@ -47,7 +47,6 @@ public class Parser {
 			a.count = countTitle(a.titel, text);
 		}
 		sortList();
-		System.out.println(list.size());
 	}
 	
 	public void setUrl(String inUrl) {
@@ -180,7 +179,7 @@ public class Parser {
 	}
 	
 	private void removeHttps() {
-		this.url = this.url.toLowerCase();
+		//this.url = this.url.toLowerCase();
 		this.url = this.url.replace("https", "http");
 	}
 }

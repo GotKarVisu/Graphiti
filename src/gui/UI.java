@@ -91,7 +91,7 @@ public class UI extends JApplet {
     VisualizationViewer<String,Integer> vv;
     VisualizationServer.Paintable rings;
     String root;
-    String startUrl = "Https://de.wikipedia.org/wiki/Weimar";
+    String startUrl = "http://de.wikipedia.org/wiki/Weimar";
     TreeLayout<String,Integer> treeLayout;
     RadialTreeLayout<String,Integer> radialLayout;
  
@@ -122,7 +122,7 @@ public class UI extends JApplet {
          
         JComboBox modeBox = graphMouse.getModeComboBox();
         modeBox.addItemListener(graphMouse.getModeListener());
-        graphMouse.setMode(ModalGraphMouse.Mode.TRANSFORMING);
+        graphMouse.setMode(ModalGraphMouse.Mode.PICKING);
  
         final ScalingControl scaler = new CrossoverScalingControl();
  
@@ -158,10 +158,8 @@ public class UI extends JApplet {
             public void actionPerformed(ActionEvent e) {
             	if(tf.getText() != null) {
             		startUrl = tf.getText().toString();
-            		System.out.println(startUrl);
+            		System.out.println(deleteTree());
             		//createTree(startUrl);
-                    //content.add(new UI(frame));
-                    //frame.pack();
             	} else
             		System.out.println("Keine URL eingegeben.");
             }
@@ -208,7 +206,7 @@ public class UI extends JApplet {
  
         content.add(controls, BorderLayout.SOUTH);
     }
-     
+         
     class Rings implements VisualizationServer.Paintable {
          
         Collection<Double> depths;
@@ -244,46 +242,49 @@ public class UI extends JApplet {
         }
     }
     
-    /*private void drawChildren(String url, int actualdepth) {
-    	int depth = 4;
-    	if(depth >= actualdepth) {
-			Parser pars = new Parser();
-			ArrayList<Pair> l = pars.getList(url);
-			String title = pars.getTitle(url);
-			graph.addVertex(title);
-			for(int x=0; x < 5; ++x) {
-				Pair t = l.get(x);
-				graph.addVertex(t.titel);
-				graph.addEdge(edgeFactory.create(), title, t.titel);
-				drawChildren(t.url, ++actualdepth);
-			}
-    	}
-    }*/
-     
+    
+         
     private void createTree(String url) {
 		Parser parser = new Parser(url);
+		Parser pars2 = null;
+		Parser pars3 = null;
 		ArrayList<Article> l = parser.getList();
 		String title = parser.getTitle();
 		graph.addVertex(title);
-		parser.printList();
 		for(int x=0; x < 5; ++x) {
-			//Article t = l.get(x);
-			//graph.addEdge(edgeFactory.create(), title, t.titel);
-//			Parser pars2 = new Parser(t.url);
-//			ArrayList<Article> l2 = pars2.getList();
-//			String title2 = pars2.getTitle();
-//			for(int y=0; y < 5; ++y) {
-//				Article t2 = l2.get(y);
-//				graph.addEdge(edgeFactory.create(), title2, t2.titel);
-//				//Parser pars3 = new Parser(t2.url);
-//				//ArrayList<Article> l3 = pars3.getList();
-//				//String title3 = pars3.getTitle();
-//				//for(int z=0; z < 5; ++z) {
-//				//	Pair t3 = l.get(z);
-//				//	graph.addEdge(edgeFactory.create(), title, t3.titel);
-//				//}
-//			}
+			pars2 = new Parser();
+			if(!graph.containsVertex(l.get(x).titel)) {
+				graph.addVertex(l.get(x).titel);
+			}
+			graph.addEdge(edgeFactory.create(), title, l.get(x).titel);
+			
+			pars2.setUrl(l.get(x).url);
+			pars2.parse();
+			ArrayList<Article> l1 = pars2.getList();
+			for(int z=0; z<4; ++z) {
+				pars3 = new Parser();
+				pars3.setUrl(l.get(x).url);
+				pars3.parse();
+				if(!graph.containsVertex(l1.get(z).titel)) {
+					graph.addVertex(l1.get(z).titel);
+					graph.addEdge(edgeFactory.create(), l.get(x).titel, l1.get(z).titel);
+				}
+				pars3 = null;
+				System.out.println(x + " - " + z);
+			}
+			pars2 = null;
 		}
+    }
+    
+    private boolean deleteTree() {
+    	for(Integer e : graph.getEdges()) {
+    		graph.removeEdge(e);
+    	}
+    	for(String v : graph.getVertices()) {
+    		graph.removeVertex(v);
+    	}
+    	return true;
+    	
     }
     
     public static void main(String[] args) {
