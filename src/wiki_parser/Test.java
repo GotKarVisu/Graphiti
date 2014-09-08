@@ -8,6 +8,6 @@ public class Test {
 		Parser parser = new Parser(url);
 		String title = parser.getTitle();
 		System.out.println(title);
-		parser.printList();
+		//parser.printList();
 	}
 }

@@ -41,7 +41,7 @@ public class Parser {
 		makeList();
 		setTitle();
 		cleanList();
-		sortList();
+		sort(list);
 	}
 	
 	public void setUrl(String inUrl) {
@@ -116,31 +116,46 @@ public class Parser {
 		int lastIndex = 0;
 		int count = 0;
 		while(lastIndex != -1) {
-			lastIndex = site.indexOf(" "+title+" ",lastIndex);
+			lastIndex = site.indexOf(title,lastIndex);
 			if(lastIndex != -1) {
 				count ++;
-				lastIndex += title.length()+1;
+				lastIndex += title.length();
 			}
 		}
 		return count;
 	}
 	
-	//TODO: Besserer Sort Alg
-	private void sortList() {
-		ArrayList<Article> tmp = new ArrayList<Article>();
-		while(!this.list.isEmpty()) {
-			int i = 0;
-			Article pNew = new Article();
-			for(Article a : this.list) {
-				if(a.count > i) {
-					i = a.count;
-					pNew = a;
-				}
-			}
-			tmp.add(pNew);
-			this.list.remove(pNew);
+	private void sort(ArrayList<Article> x) {
+		quicksort(x, 0, x.size()-1);
+	}
+	private void quicksort(ArrayList<Article> x, int l, int r) {
+		if(l < r) {
+			int i = partitionQS(x, l, r);
+			quicksort(x,l,i-1);
+			quicksort(x,i+1,r);
 		}
-		this.list = tmp;
+	}
+	private static int partitionQS(ArrayList<Article> x, int l, int r) {
+		Article pivot, tmp;
+		int i, j;
+		pivot = x.get(r);
+		i = l;
+		j = r - 1;
+		while(i <= j) {
+			if(x.get(i).count < pivot.count) {
+				tmp = x.get(i);
+				x.set(i, x.get(j));
+				x.set(j, tmp);
+				j--;
+			}
+			else {
+				i++;
+			}
+		}
+		tmp = x.get(i);
+		x.set(i, x.get(r));
+		x.set(r, tmp);
+		return i;
 	}
 	
 	private Elements getElements() {
