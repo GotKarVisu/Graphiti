@@ -10,6 +10,8 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridLayout;
+import java.awt.Image;
+import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
@@ -18,13 +20,18 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Point2D;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
 import javax.swing.JApplet;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -33,10 +40,14 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JTextField;
 import javax.swing.JToggleButton;
+import javax.swing.border.Border;
+import javax.swing.border.EtchedBorder;
 
 import org.apache.commons.collections15.Factory;
+import org.apache.commons.collections15.Transformer;
 import org.apache.commons.collections15.functors.ConstantTransformer;
 
+import edu.uci.ics.jung.algorithms.layout.Layout;
 import edu.uci.ics.jung.algorithms.layout.PolarPoint;
 import edu.uci.ics.jung.algorithms.layout.RadialTreeLayout;
 import edu.uci.ics.jung.algorithms.layout.TreeLayout;
@@ -48,6 +59,7 @@ import edu.uci.ics.jung.graph.DelegateTree;
 import edu.uci.ics.jung.graph.Tree;
 import edu.uci.ics.jung.visualization.GraphZoomScrollPane;
 import edu.uci.ics.jung.visualization.Layer;
+import edu.uci.ics.jung.visualization.RenderContext;
 import edu.uci.ics.jung.visualization.VisualizationServer;
 import edu.uci.ics.jung.visualization.VisualizationViewer;
 import edu.uci.ics.jung.visualization.control.CrossoverScalingControl;
@@ -57,6 +69,9 @@ import edu.uci.ics.jung.visualization.control.ScalingControl;
 import edu.uci.ics.jung.visualization.decorators.EdgeShape;
 import edu.uci.ics.jung.visualization.decorators.ToStringLabeller;
 import edu.uci.ics.jung.visualization.layout.LayoutTransition;
+import edu.uci.ics.jung.visualization.renderers.Renderer;
+import edu.uci.ics.jung.visualization.transform.MutableTransformer;
+import edu.uci.ics.jung.visualization.transform.shape.GraphicsDecorator;
 import edu.uci.ics.jung.visualization.util.Animator;
  
 @SuppressWarnings("serial")
@@ -108,7 +123,16 @@ public class UI extends JApplet {
         int ySize = ((int) tk.getScreenSize().getHeight());  
         radialLayout.setSize(new Dimension(xSize-500,ySize-500));
         vv =  new VisualizationViewer<String,Integer>(radialLayout, new Dimension(xSize-200,ySize-200));
-        vv.setBackground(Color.white);
+        vv.setBackground(Color.lightGray);
+        vv.setAutoscrolls(true);
+        Border border = BorderFactory.createLineBorder(Color.black);
+        border = BorderFactory.createLoweredBevelBorder();
+        vv.setBorder(border);
+        
+        Transformer<String, String> transformer = new Transformer<String, String>() {
+            @Override public String transform(String arg0) { return arg0; }
+          };
+          vv.getRenderContext().setVertexLabelTransformer(transformer);
        
         vv.getRenderContext().setEdgeShapeTransformer(new EdgeShape.Line<String, Integer>());
         vv.getRenderContext().setVertexLabelTransformer(new ToStringLabeller<String>());
@@ -155,12 +179,14 @@ public class UI extends JApplet {
                 //scaler.scale(vv, 1/1.1f, vv.getCenter());
             }
         });
-    	final JTextField tf  = new JTextField("", 20);
-    	JButton button = new JButton("GO!");
+    	final JTextField tf  = new JTextField("", 30);
+    	
+    	JButton button = new JButton("URL visualisieren");
     	
         button.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-            	if(tf.getText() != null) {
+            	// TODO: Brauchen URL-Checker (Ist es ein Wikipedia-link?)
+            	if(!tf.getText().equals("")) {
             		startUrl = tf.getText().toString();
             		deleteTree();
             		setProgress(1);
@@ -202,6 +228,8 @@ public class UI extends JApplet {
         scaleGrid.setBorder(BorderFactory.createTitledBorder("Zoom"));
         JPanel historyGrid = new JPanel(new GridLayout(1,0));
         historyGrid.setBorder(BorderFactory.createTitledBorder("Verlauf"));
+        JPanel searchGrid = new JPanel(new GridLayout(1,1));
+        searchGrid.setBorder(BorderFactory.createTitledBorder("Wikipedia-URL"));
 
         progressBar.setMaximum(100);
         progressBar.setMinimum(0);
@@ -212,18 +240,41 @@ public class UI extends JApplet {
         //scaleGrid.add(minus);
         historyGrid.add(vor);
         historyGrid.add(zurueck);
-        controls.add(tf);
-        controls.add(button);
+        searchGrid.add(tf);
+        searchGrid.add(button);
+        controls.add(searchGrid);
         //controls.add(radial);
         //controls.add(scaleGrid);
         controls.add(historyGrid);
         //controls.add(modeBox);
- 
+
         content.add(controls, BorderLayout.SOUTH);
         content.add(progressBar, BorderLayout.NORTH);
         
-
+        
+        
+        
+        
     }
+    
+    public void paintVertex(RenderContext<String, String> rc, Layout<String, String> layout, String vertex) {
+          GraphicsDecorator graphicsContext = rc.getGraphicsContext();
+          Point2D center = layout.transform(vertex);
+          Shape shape = null;
+          Color color = null;
+          if(vertex.equals("Square")) {
+            shape = new Rectangle((int)center.getX()-10, (int)center.getY()-10, 20, 20);
+            color = new Color(127, 127, 0);
+          } else if(vertex.equals("Rectangle")) {
+            shape = new Rectangle((int)center.getX()-10, (int)center.getY()-20, 20, 40);
+            color = new Color(127, 0, 127);
+          } else if(vertex.equals("Weimar")) {
+            shape = new Ellipse2D.Double(center.getX()-10, center.getY()-10, 20, 20);
+            color = new Color(0, 20, 255);
+          }
+          graphicsContext.setPaint(color);
+          graphicsContext.fill(shape);
+        }
  
     private void createTree(String url) {
 		Parser parser = new Parser(url);
@@ -251,7 +302,6 @@ public class UI extends JApplet {
 					graph.addEdge(edgeFactory.create(), l.get(x).titel, l1.get(z).titel);
 				}
 				pars3 = null;
-				System.out.println(x + " - " + z);
 			}
 			pars2 = null;
 			setProgress((x+1)*10);
@@ -265,31 +315,29 @@ public class UI extends JApplet {
     }
     
     private boolean deleteTree() {
-    	System.out.println(graph.getEdgeCount());
     	ArrayList<Integer> l = new ArrayList<Integer>();
     	ArrayList<String> l2 = new ArrayList<String>();
-    	for(Integer e : graph.getEdges()) {
+    	for(Integer e : graph.getEdges())
     		l.add(e);
-    	}
-    	for(int i : l) {
+    	for(int i : l)
     		graph.removeEdge(i);
-    	}
-    	for(String v : graph.getVertices()) {
+    	for(String v : graph.getVertices())
     		l2.add(v);
-    	}
-    	for(String s : l2) {
+    	for(String s : l2)
     		graph.removeVertex(s);
-    	}
-    	System.out.println(graph.getEdgeCount());
     	return true;
-    	
     }
     
     public static void main(String[] args) {
-        JFrame frame = new JFrame();
+        JFrame frame = new JFrame("Graphiti - Visualize Wikipedia");
         Container content = frame.getContentPane();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         content.add(new UI(frame));
+        try {
+			frame.setIconImage(ImageIO.read(new File("icon.png")));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
         frame.pack();
         frame.setVisible(true);
     }
@@ -324,4 +372,5 @@ public class UI extends JApplet {
  
         public boolean useTransform() {  return true;  }
     }
+
 }
