@@ -56,6 +56,7 @@ import edu.uci.ics.jung.graph.DirectedSparseMultigraph;
 import edu.uci.ics.jung.graph.Forest;
 import edu.uci.ics.jung.graph.DelegateForest;
 import edu.uci.ics.jung.graph.DelegateTree;
+import edu.uci.ics.jung.graph.Graph;
 import edu.uci.ics.jung.graph.Tree;
 import edu.uci.ics.jung.visualization.GraphZoomScrollPane;
 import edu.uci.ics.jung.visualization.Layer;
@@ -67,10 +68,11 @@ import edu.uci.ics.jung.visualization.control.DefaultModalGraphMouse;
 import edu.uci.ics.jung.visualization.control.ModalGraphMouse;
 import edu.uci.ics.jung.visualization.control.ScalingControl;
 import edu.uci.ics.jung.visualization.decorators.EdgeShape;
+import edu.uci.ics.jung.visualization.decorators.EllipseVertexShapeTransformer;
 import edu.uci.ics.jung.visualization.decorators.ToStringLabeller;
 import edu.uci.ics.jung.visualization.layout.LayoutTransition;
-import edu.uci.ics.jung.visualization.renderers.Renderer;
-import edu.uci.ics.jung.visualization.transform.MutableTransformer;
+import edu.uci.ics.jung.visualization.picking.PickedState;
+import edu.uci.ics.jung.visualization.subLayout.TreeCollapser;
 import edu.uci.ics.jung.visualization.transform.shape.GraphicsDecorator;
 import edu.uci.ics.jung.visualization.util.Animator;
  
@@ -111,6 +113,10 @@ public class UI extends JApplet {
     TreeLayout<String,Integer> treeLayout;
     RadialTreeLayout<String,Integer> radialLayout;
     JProgressBar progressBar;
+    
+    ArrayList<String> otherNodes = new ArrayList<String>();
+    ArrayList<Integer> edgeList = new ArrayList<Integer>();
+    boolean expanded = false;
  
     public UI(JFrame frame) {
         graph = new DelegateForest<String,Integer>();
@@ -118,7 +124,8 @@ public class UI extends JApplet {
 
         treeLayout = new TreeLayout<String,Integer>(graph);
         radialLayout = new RadialTreeLayout<String,Integer>(graph);
-        Toolkit tk = Toolkit.getDefaultToolkit();  
+        final TreeCollapser collapser = new TreeCollapser();
+        final Toolkit tk = Toolkit.getDefaultToolkit();  
         int xSize = ((int) tk.getScreenSize().getWidth());  
         int ySize = ((int) tk.getScreenSize().getHeight());  
         radialLayout.setSize(new Dimension(xSize-500,ySize-500));
@@ -223,6 +230,73 @@ public class UI extends JApplet {
                 }
                 vv.repaint();
             }});
+        JButton collapse = new JButton("Collapse");
+        collapse.addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+            	if(expanded) {
+            		for(String s : otherNodes) {
+            			for(int edge : edgeList) {
+            				graph.removeEdge(edge);
+            			}
+            			for(String v : otherNodes) {
+            				graph.removeVertex(v);
+            			}
+            			vv.removeAll();
+                		radialLayout = new RadialTreeLayout<String,Integer>(graph);
+                        int ySize = ((int) tk.getScreenSize().getHeight());  
+                        radialLayout.setSize(new Dimension(ySize-50,ySize-100));
+                        vv.setGraphLayout(radialLayout);
+                		vv.repaint();
+            		}
+            		expanded = false;
+            	}
+//                Collection picked =new HashSet(vv.getPickedVertexState().getPicked());
+//                if(picked.size() == 1) {
+//                	Object root = picked.iterator().next();
+//                    Forest inGraph = (Forest)treeLayout.getGraph();
+//                    try {
+//						collapser.collapse(vv.getGraphLayout(), inGraph, root);
+//					} catch (InstantiationException e1) {
+//						e1.printStackTrace();
+//					} catch (IllegalAccessException e1) {
+//						e1.printStackTrace();
+//					}
+//                    vv.getPickedVertexState().clear();
+//                    vv.repaint();
+//                }
+            }});
+        JButton expand = new JButton("Expand");
+        expand.addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+            	if(!expanded) {
+            		for(String s : otherNodes) {
+            			graph.addVertex(s);
+            			int num = edgeFactory.create();
+            			edgeList.add(num);
+            			graph.addEdge(num,"other", s);
+            		}
+            		vv.removeAll();
+            		radialLayout = new RadialTreeLayout<String,Integer>(graph);
+                    int ySize = ((int) tk.getScreenSize().getHeight());  
+                    radialLayout.setSize(new Dimension(ySize-50,ySize-100));
+                    vv.setGraphLayout(radialLayout);
+            		vv.repaint();
+            		expanded = true;
+            	}
+            	
+            	
+                /*Collection picked = vv.getPickedVertexState().getPicked();
+                for(Object v : picked) {
+                    if(v instanceof Forest) {
+                        Forest inGraph = (Forest)treeLayout.getGraph();
+            			collapser.expand(inGraph, (Forest)v);
+                    }
+                    vv.getPickedVertexState().clear();
+                   vv.repaint();
+                }*/
+            }});
  
         JPanel scaleGrid = new JPanel(new GridLayout(1,0));
         scaleGrid.setBorder(BorderFactory.createTitledBorder("Zoom"));
@@ -247,7 +321,8 @@ public class UI extends JApplet {
         //controls.add(scaleGrid);
         controls.add(historyGrid);
         //controls.add(modeBox);
-
+        controls.add(collapse);
+        controls.add(expand);
         content.add(controls, BorderLayout.SOUTH);
         content.add(progressBar, BorderLayout.NORTH);
         
@@ -306,6 +381,20 @@ public class UI extends JApplet {
 			pars2 = null;
 			setProgress((x+1)*10);
 		}
+		graph.addVertex("other");
+		graph.addEdge(edgeFactory.create(),title, "other");
+		for(int i=10; i<l.size(); ++i) {
+			if(!graph.containsVertex(l.get(i).titel)) {
+				otherNodes.add(l.get(i).titel);
+//				graph.addVertex(l.get(i).titel);
+//				graph.addEdge(edgeFactory.create(), "other", l.get(i).titel);
+			}
+			
+		}
+		
+		//TODO: auto collapse
+//		PickedState st
+//		vv.setPickedVertexState();
     }
     
     private void setProgress(int value) {
@@ -372,5 +461,39 @@ public class UI extends JApplet {
  
         public boolean useTransform() {  return true;  }
     }
+    class ClusterVertexShapeFunction<V> extends EllipseVertexShapeTransformer<V>
+    {
 
+            ClusterVertexShapeFunction() {
+                setSizeTransformer(new ClusterVertexSizeFunction<V>(20));
+            }
+            @SuppressWarnings("unchecked")
+    		@Override
+            public Shape transform(V v) {
+                if(v instanceof Graph) {
+                    int size = ((Graph)v).getVertexCount();
+                    if (size < 8) {   
+                        int sides = Math.max(size, 3);
+                        return factory.getRegularPolygon(v, sides);
+                    }
+                    else {
+                        return factory.getRegularStar(v, 8);
+                    }
+                }
+                return super.transform(v);
+            }
+        }
+    class ClusterVertexSizeFunction<V> implements Transformer<V,Integer> {
+    	int size;
+        public ClusterVertexSizeFunction(Integer size) {
+            this.size = size;
+        }
+
+        public Integer transform(V v) {
+            if(v instanceof Graph) {
+                return 30;
+            }
+            return size;
+        }
+    }
 }
