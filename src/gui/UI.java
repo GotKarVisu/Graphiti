@@ -230,8 +230,8 @@ public class UI extends JApplet {
                 }
                 vv.repaint();
             }});
-        JButton collapse = new JButton("Collapse");
-        collapse.addActionListener(new ActionListener() {
+        JButton toggleOther = new JButton("Toggle Others");
+        toggleOther.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
             	if(expanded) {
@@ -251,26 +251,7 @@ public class UI extends JApplet {
             		}
             		expanded = false;
             	}
-//                Collection picked =new HashSet(vv.getPickedVertexState().getPicked());
-//                if(picked.size() == 1) {
-//                	Object root = picked.iterator().next();
-//                    Forest inGraph = (Forest)treeLayout.getGraph();
-//                    try {
-//						collapser.collapse(vv.getGraphLayout(), inGraph, root);
-//					} catch (InstantiationException e1) {
-//						e1.printStackTrace();
-//					} catch (IllegalAccessException e1) {
-//						e1.printStackTrace();
-//					}
-//                    vv.getPickedVertexState().clear();
-//                    vv.repaint();
-//                }
-            }});
-        JButton expand = new JButton("Expand");
-        expand.addActionListener(new ActionListener() {
-
-            public void actionPerformed(ActionEvent e) {
-            	if(!expanded) {
+            	else {
             		for(String s : otherNodes) {
             			graph.addVertex(s);
             			int num = edgeFactory.create();
@@ -285,9 +266,34 @@ public class UI extends JApplet {
             		vv.repaint();
             		expanded = true;
             	}
-            	
-            	
-                /*Collection picked = vv.getPickedVertexState().getPicked();
+            }});
+        
+        //TODO: nullpointer exception bei collapstem node, wenn man toggled
+        JButton collapse = new JButton("Collapse");
+        collapse.addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+            	Collection picked =new HashSet(vv.getPickedVertexState().getPicked());
+                if(picked.size() == 1) {
+                	Object root = picked.iterator().next();
+                    Forest inGraph = (Forest)treeLayout.getGraph();
+                    try {
+						collapser.collapse(vv.getGraphLayout(), inGraph, root);
+					} catch (InstantiationException e1) {
+						e1.printStackTrace();
+					} catch (IllegalAccessException e1) {
+						e1.printStackTrace();
+					}
+                    vv.getPickedVertexState().clear();
+                    vv.repaint();
+                }
+            }});
+        
+        JButton expand = new JButton("Expand");
+        expand.addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                Collection picked = vv.getPickedVertexState().getPicked();
                 for(Object v : picked) {
                     if(v instanceof Forest) {
                         Forest inGraph = (Forest)treeLayout.getGraph();
@@ -295,7 +301,7 @@ public class UI extends JApplet {
                     }
                     vv.getPickedVertexState().clear();
                    vv.repaint();
-                }*/
+                }
             }});
  
         JPanel scaleGrid = new JPanel(new GridLayout(1,0));
@@ -321,6 +327,7 @@ public class UI extends JApplet {
         //controls.add(scaleGrid);
         controls.add(historyGrid);
         //controls.add(modeBox);
+        controls.add(toggleOther);
         controls.add(collapse);
         controls.add(expand);
         content.add(controls, BorderLayout.SOUTH);
