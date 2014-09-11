@@ -3,6 +3,7 @@ package gui;
 import wiki_parser.Article;
 import wiki_parser.Parser;
 
+import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
@@ -11,6 +12,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridLayout;
 import java.awt.Image;
+import java.awt.Paint;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.Toolkit;
@@ -71,7 +73,10 @@ import edu.uci.ics.jung.visualization.decorators.EdgeShape;
 import edu.uci.ics.jung.visualization.decorators.EllipseVertexShapeTransformer;
 import edu.uci.ics.jung.visualization.decorators.ToStringLabeller;
 import edu.uci.ics.jung.visualization.layout.LayoutTransition;
+import edu.uci.ics.jung.visualization.picking.PickedInfo;
 import edu.uci.ics.jung.visualization.picking.PickedState;
+import edu.uci.ics.jung.visualization.renderers.DefaultVertexLabelRenderer;
+import edu.uci.ics.jung.visualization.renderers.Renderer.VertexLabel.Position;
 import edu.uci.ics.jung.visualization.subLayout.TreeCollapser;
 import edu.uci.ics.jung.visualization.transform.shape.GraphicsDecorator;
 import edu.uci.ics.jung.visualization.util.Animator;
@@ -130,20 +135,33 @@ public class UI extends JApplet {
         int ySize = ((int) tk.getScreenSize().getHeight());  
         radialLayout.setSize(new Dimension(xSize-500,ySize-500));
         vv =  new VisualizationViewer<String,Integer>(radialLayout, new Dimension(xSize-200,ySize-200));
+        
+        vv.getRenderContext().setVertexLabelRenderer(new DefaultVertexLabelRenderer(Color.blue));
+        vv.getRenderContext().setEdgeStrokeTransformer(new ConstantTransformer(new BasicStroke(1.5f)));
+        //vv.getRenderContext().setVertexLabelTransformer(new ToStringLabeller<String>());
+        vv.getRenderer().getVertexLabelRenderer().setPosition(Position.CNTR);
+        vv.setToolTipText("<html><center>MouseWheel Scales Layout and<p>ctrl+MouseWheel scales view</center></html>");
+
         vv.setBackground(Color.lightGray);
         vv.setAutoscrolls(true);
-        Border border = BorderFactory.createLineBorder(Color.black);
+        Border border = BorderFactory.createLineBorder(Color.gray);
         border = BorderFactory.createLoweredBevelBorder();
         vv.setBorder(border);
         
         Transformer<String, String> transformer = new Transformer<String, String>() {
             @Override public String transform(String arg0) { return arg0; }
-          };
-          vv.getRenderContext().setVertexLabelTransformer(transformer);
+        };
+        
+        Transformer<String, String> transformtip = new Transformer<String, String>() {
+            @Override public String transform(String arg0) {
+            	return "Informationen zu "+arg0;
+            }
+        };
+        vv.getRenderContext().setVertexLabelTransformer(transformer);
        
         vv.getRenderContext().setEdgeShapeTransformer(new EdgeShape.Line<String, Integer>());
-        vv.getRenderContext().setVertexLabelTransformer(new ToStringLabeller<String>());
-        vv.setVertexToolTipTransformer(new ToStringLabeller<String>());
+       // vv.getRenderContext().setVertexLabelTransformer(new ToStringLabeller<String>());
+        vv.setVertexToolTipTransformer(transformtip);
         vv.getRenderContext().setArrowFillPaintTransformer(new ConstantTransformer(Color.lightGray));
         rings = new Rings();
 
@@ -173,21 +191,8 @@ public class UI extends JApplet {
                 scaler.scale(vv, 1/1.1f, vv.getCenter());
             }
         });
- 
-        JButton vor = new JButton("Vor");
-        plus.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                //scaler.scale(vv, 1.1f, vv.getCenter());
-            }
-        });
-        JButton zurueck = new JButton("Zurueck");
-        minus.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                //scaler.scale(vv, 1/1.1f, vv.getCenter());
-            }
-        });
+
     	final JTextField tf  = new JTextField("", 30);
-    	
     	JButton button = new JButton("URL visualisieren");
     	
         button.addActionListener(new ActionListener() {
@@ -306,8 +311,6 @@ public class UI extends JApplet {
  
         JPanel scaleGrid = new JPanel(new GridLayout(1,0));
         scaleGrid.setBorder(BorderFactory.createTitledBorder("Zoom"));
-        JPanel historyGrid = new JPanel(new GridLayout(1,0));
-        historyGrid.setBorder(BorderFactory.createTitledBorder("Verlauf"));
         JPanel searchGrid = new JPanel(new GridLayout(1,1));
         searchGrid.setBorder(BorderFactory.createTitledBorder("Wikipedia-URL"));
 
@@ -316,27 +319,19 @@ public class UI extends JApplet {
         progressBar.setStringPainted(true);
  
         JPanel controls = new JPanel();
-        //scaleGrid.add(plus);
-        //scaleGrid.add(minus);
-        historyGrid.add(vor);
-        historyGrid.add(zurueck);
+        scaleGrid.add(plus);
+        scaleGrid.add(minus);
         searchGrid.add(tf);
         searchGrid.add(button);
         controls.add(searchGrid);
-        //controls.add(radial);
-        //controls.add(scaleGrid);
-        controls.add(historyGrid);
-        //controls.add(modeBox);
+        controls.add(radial);
+        controls.add(scaleGrid);
+        controls.add(modeBox);
         controls.add(toggleOther);
         controls.add(collapse);
         controls.add(expand);
         content.add(controls, BorderLayout.SOUTH);
         content.add(progressBar, BorderLayout.NORTH);
-        
-        
-        
-        
-        
     }
     
     public void paintVertex(RenderContext<String, String> rc, Layout<String, String> layout, String vertex) {
