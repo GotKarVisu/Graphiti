@@ -11,11 +11,8 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridLayout;
-import java.awt.Image;
-import java.awt.Paint;
 import java.awt.Rectangle;
 import java.awt.Shape;
-import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -24,7 +21,6 @@ import java.awt.geom.Ellipse2D;
 import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -33,17 +29,19 @@ import java.util.Set;
 
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
-import javax.swing.ImageIcon;
 import javax.swing.JApplet;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JDialog;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
+import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 import javax.swing.JToggleButton;
 import javax.swing.border.Border;
-import javax.swing.border.EtchedBorder;
 
 import org.apache.commons.collections15.Factory;
 import org.apache.commons.collections15.Transformer;
@@ -68,21 +66,53 @@ import edu.uci.ics.jung.visualization.VisualizationViewer;
 import edu.uci.ics.jung.visualization.control.CrossoverScalingControl;
 import edu.uci.ics.jung.visualization.control.DefaultModalGraphMouse;
 import edu.uci.ics.jung.visualization.control.ModalGraphMouse;
+import edu.uci.ics.jung.visualization.control.ModalLensGraphMouse;
 import edu.uci.ics.jung.visualization.control.ScalingControl;
 import edu.uci.ics.jung.visualization.decorators.EdgeShape;
 import edu.uci.ics.jung.visualization.decorators.EllipseVertexShapeTransformer;
-import edu.uci.ics.jung.visualization.decorators.ToStringLabeller;
+import edu.uci.ics.jung.visualization.decorators.PickableEdgePaintTransformer;
+import edu.uci.ics.jung.visualization.decorators.PickableVertexPaintTransformer;
 import edu.uci.ics.jung.visualization.layout.LayoutTransition;
-import edu.uci.ics.jung.visualization.picking.PickedInfo;
 import edu.uci.ics.jung.visualization.picking.PickedState;
 import edu.uci.ics.jung.visualization.renderers.DefaultVertexLabelRenderer;
+import edu.uci.ics.jung.visualization.renderers.GradientVertexRenderer;
 import edu.uci.ics.jung.visualization.renderers.Renderer.VertexLabel.Position;
 import edu.uci.ics.jung.visualization.subLayout.TreeCollapser;
+import edu.uci.ics.jung.visualization.transform.LensSupport;
 import edu.uci.ics.jung.visualization.transform.shape.GraphicsDecorator;
+import edu.uci.ics.jung.visualization.transform.shape.HyperbolicShapeTransformer;
+import edu.uci.ics.jung.visualization.transform.shape.ViewLensSupport;
 import edu.uci.ics.jung.visualization.util.Animator;
- 
+
+
 @SuppressWarnings("serial")
 public class UI extends JApplet {
+	final int windowSizeX = 800;
+	final int windowSizeY = 600;
+	
+	static final String instructions = 
+            "<html>"+
+            "<b><h2><center>Instructions for Annotations</center></h2></b>"+
+            "<p>The Annotation Controls allow you to select:"+
+            "<ul>"+
+            "<li>Shape"+
+            "<li>Color"+
+            "<li>Fill (or outline)"+
+            "<li>Above or below (UPPER/LOWER) the graph display"+
+            "</ul>"+
+            "<p>Mouse Button one press starts a Shape,"+
+            "<p>drag and release to complete."+
+            "<p>Mouse Button three pops up an input dialog"+
+            "<p>for text. This will create a text annotation."+
+            "<p>You may use html for multi-line, etc."+
+            "<p>You may even use an image tag and image url"+
+            "<p>to put an image in the annotation."+
+            "<p><p>"+
+            "<p>To remove an annotation, shift-click on it"+
+            "<p>in the Annotations mode."+
+            "<p>If there is overlap, the Annotation with center"+
+            "<p>closest to the mouse point will be removed.";
+    JDialog instDialog;
 
     Forest<String,Integer> graph;
     Factory<DirectedGraph<String,Integer>> graphFactory = 
@@ -91,20 +121,17 @@ public class UI extends JApplet {
                 return new DirectedSparseMultigraph<String,Integer>();
             }
         };
-             
     Factory<Tree<String,Integer>> treeFactory =
         new Factory<Tree<String,Integer>> () {
          public Tree<String, Integer> create() {
             return new DelegateTree<String,Integer>(graphFactory);
         }
     };
-     
     Factory<Integer> edgeFactory = new Factory<Integer>() {
         int i=0;
         public Integer create() {
             return i++;
         }};
-     
     Factory<String> vertexFactory = new Factory<String>() {
         int i=0;
         public String create() {
@@ -122,56 +149,65 @@ public class UI extends JApplet {
     ArrayList<String> otherNodes = new ArrayList<String>();
     ArrayList<Integer> edgeList = new ArrayList<Integer>();
     boolean expanded = false;
+    
+    LensSupport hyperbolicViewSupport;
  
     public UI(JFrame frame) {
         graph = new DelegateForest<String,Integer>();
-        progressBar = new JProgressBar();
 
         treeLayout = new TreeLayout<String,Integer>(graph);
         radialLayout = new RadialTreeLayout<String,Integer>(graph);
         final TreeCollapser collapser = new TreeCollapser();
-        final Toolkit tk = Toolkit.getDefaultToolkit();  
-        int xSize = ((int) tk.getScreenSize().getWidth());  
-        int ySize = ((int) tk.getScreenSize().getHeight());  
-        radialLayout.setSize(new Dimension(xSize-500,ySize-500));
-        vv =  new VisualizationViewer<String,Integer>(radialLayout, new Dimension(xSize-200,ySize-200));
+        radialLayout.setSize(new Dimension(windowSizeX, windowSizeY));
+        vv =  new VisualizationViewer<String,Integer>(radialLayout, new Dimension(windowSizeX,windowSizeY));
         
         vv.getRenderContext().setVertexLabelRenderer(new DefaultVertexLabelRenderer(Color.blue));
         vv.getRenderContext().setEdgeStrokeTransformer(new ConstantTransformer(new BasicStroke(1.5f)));
         //vv.getRenderContext().setVertexLabelTransformer(new ToStringLabeller<String>());
         vv.getRenderer().getVertexLabelRenderer().setPosition(Position.CNTR);
-        vv.setToolTipText("<html><center>MouseWheel Scales Layout and<p>ctrl+MouseWheel scales view</center></html>");
 
-        vv.setBackground(Color.lightGray);
+        PickedState<String> ps = vv.getPickedVertexState();
+        PickedState<Integer> pes = vv.getPickedEdgeState();
+        vv.getRenderContext().setVertexFillPaintTransformer(new PickableVertexPaintTransformer<String>(ps, Color.red, Color.yellow));
+        vv.getRenderContext().setEdgeDrawPaintTransformer(new PickableEdgePaintTransformer<Integer>(pes, Color.black, Color.cyan));
+        vv.setBackground(Color.white);
         vv.setAutoscrolls(true);
         Border border = BorderFactory.createLineBorder(Color.gray);
         border = BorderFactory.createLoweredBevelBorder();
         vv.setBorder(border);
         
+        vv.getRenderContext().setEdgeShapeTransformer(new EdgeShape.Line());
+        vv.getRenderer().setVertexRenderer(new GradientVertexRenderer<String,Integer>(Color.white, Color.red, Color.white, Color.blue, vv.getPickedVertexState(), false));
+
         Transformer<String, String> transformer = new Transformer<String, String>() {
             @Override public String transform(String arg0) { return arg0; }
         };
-        
         Transformer<String, String> transformtip = new Transformer<String, String>() {
             @Override public String transform(String arg0) {
             	return "Informationen zu "+arg0;
             }
         };
+        
         vv.getRenderContext().setVertexLabelTransformer(transformer);
-       
         vv.getRenderContext().setEdgeShapeTransformer(new EdgeShape.Line<String, Integer>());
        // vv.getRenderContext().setVertexLabelTransformer(new ToStringLabeller<String>());
         vv.setVertexToolTipTransformer(transformtip);
         vv.getRenderContext().setArrowFillPaintTransformer(new ConstantTransformer(Color.lightGray));
-        rings = new Rings();
+        
+        hyperbolicViewSupport = 
+                new ViewLensSupport<String,Integer>(vv, new HyperbolicShapeTransformer(vv, 
+                		vv.getRenderContext().getMultiLayerTransformer().getTransformer(Layer.VIEW)), 
+                        new ModalLensGraphMouse());
 
         Container content = getContentPane();
         final GraphZoomScrollPane panel = new GraphZoomScrollPane(vv);
         content.add(panel);
          
         final DefaultModalGraphMouse<String, Integer> graphMouse = new DefaultModalGraphMouse<String, Integer>();
- 
         vv.setGraphMouse(graphMouse);
+        vv.addKeyListener(graphMouse.getModeKeyListener());
+        rings = new Rings();
+		//vv.addPreRenderPaintable(rings);
          
         JComboBox<String> modeBox = graphMouse.getModeComboBox();
         modeBox.addItemListener(graphMouse.getModeListener());
@@ -204,20 +240,22 @@ public class UI extends JApplet {
             		setProgress(1);
             		vv.removeAll();
             		createTree(startUrl);
+            		// TODO: Kann manche URLs nicht in den graph speichern - Null Pointer
             		radialLayout = new RadialTreeLayout<String,Integer>(graph);
-                    int ySize = ((int) tk.getScreenSize().getHeight());  
-                    radialLayout.setSize(new Dimension(ySize-50,ySize-100));
+                    radialLayout.setSize(new Dimension(windowSizeX,windowSizeY));
+            		treeLayout = new RadialTreeLayout<String,Integer>(graph);
+                    treeLayout.setSize(new Dimension(windowSizeX,windowSizeY));
+            		vv.addPreRenderPaintable(rings);
                     vv.setGraphLayout(radialLayout);
             		vv.repaint();
             	} else
-            		System.out.println("Keine URL eingegeben.");
+            		JOptionPane.showMessageDialog(frame, "Invalid Wikipedia-URL.");
             }
         });
     	            
         JToggleButton radial = new JToggleButton("Radial");
         radial.addItemListener(new ItemListener() {
- 
-            public void itemStateChanged(ItemEvent e) {
+             public void itemStateChanged(ItemEvent e) {
                 if(e.getStateChange() == ItemEvent.SELECTED) {
                     LayoutTransition<String,Integer> lt =
                         new LayoutTransition<String,Integer>(vv, treeLayout, radialLayout);
@@ -249,8 +287,7 @@ public class UI extends JApplet {
             			}
             			vv.removeAll();
                 		radialLayout = new RadialTreeLayout<String,Integer>(graph);
-                        int ySize = ((int) tk.getScreenSize().getHeight());  
-                        radialLayout.setSize(new Dimension(ySize-50,ySize-100));
+                        radialLayout.setSize(new Dimension(windowSizeX,windowSizeY));
                         vv.setGraphLayout(radialLayout);
                 		vv.repaint();
             		}
@@ -265,8 +302,7 @@ public class UI extends JApplet {
             		}
             		vv.removeAll();
             		radialLayout = new RadialTreeLayout<String,Integer>(graph);
-                    int ySize = ((int) tk.getScreenSize().getHeight());  
-                    radialLayout.setSize(new Dimension(ySize-50,ySize-100));
+                    radialLayout.setSize(new Dimension(windowSizeX,windowSizeY));
                     vv.setGraphLayout(radialLayout);
             		vv.repaint();
             		expanded = true;
@@ -308,28 +344,59 @@ public class UI extends JApplet {
                    vv.repaint();
                 }
             }});
+        
+        final JRadioButton hyperView = new JRadioButton("Hyperbolic View");
+        hyperView.addItemListener(new ItemListener(){
+            public void itemStateChanged(ItemEvent e) {
+                hyperbolicViewSupport.activate(e.getStateChange() == ItemEvent.SELECTED);
+            }
+        });
+        graphMouse.addItemListener(hyperbolicViewSupport.getGraphMouse().getModeListener());
  
-        JPanel scaleGrid = new JPanel(new GridLayout(1,0));
-        scaleGrid.setBorder(BorderFactory.createTitledBorder("Zoom"));
-        JPanel searchGrid = new JPanel(new GridLayout(1,1));
-        searchGrid.setBorder(BorderFactory.createTitledBorder("Wikipedia-URL"));
-
+        progressBar = new JProgressBar();
         progressBar.setMaximum(100);
         progressBar.setMinimum(0);
         progressBar.setStringPainted(true);
- 
+        
+        instDialog = new JDialog();
+        instDialog.getContentPane().add(new JLabel(instructions));
+        JButton instruction = new JButton("Instructions");
+        instruction.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                instDialog.pack();
+                instDialog.setVisible(true);
+            }
+        });
+        
         JPanel controls = new JPanel();
-        scaleGrid.add(plus);
-        scaleGrid.add(minus);
-        searchGrid.add(tf);
-        searchGrid.add(button);
-        controls.add(searchGrid);
-        controls.add(radial);
-        controls.add(scaleGrid);
-        controls.add(modeBox);
-        controls.add(toggleOther);
-        controls.add(collapse);
-        controls.add(expand);
+        // Instructions
+        	controls.add(instruction);
+        // Scaling
+	        JPanel scaleGrid = new JPanel(new GridLayout(1,0));
+	        scaleGrid.setBorder(BorderFactory.createTitledBorder("Zoom"));
+        	scaleGrid.add(plus);
+        	scaleGrid.add(minus);
+        	controls.add(scaleGrid);
+        // Search URL
+            JPanel searchGrid = new JPanel(new GridLayout(1,1));
+            searchGrid.setBorder(BorderFactory.createTitledBorder("Wikipedia-URL"));
+        	searchGrid.add(tf);
+        	searchGrid.add(button);
+            controls.add(searchGrid);
+        // Change View
+            controls.add(radial);
+        // Control Vertices
+            JPanel controlVertices = new JPanel();
+            controlVertices.setBorder(BorderFactory.createTitledBorder("Control Vertices"));
+            controlVertices.add(toggleOther);
+        	controlVertices.add(collapse);
+        	controlVertices.add(expand);
+        	controls.add(controlVertices);
+        // Transforming or Picking
+        	controls.add(modeBox);
+        // Hyperbolic View
+        	controls.add(hyperView);
+        	
         content.add(controls, BorderLayout.SOUTH);
         content.add(progressBar, BorderLayout.NORTH);
     }
@@ -370,7 +437,6 @@ public class UI extends JApplet {
 			pars2.parse();
 			ArrayList<Article> l1 = pars2.getList();
 			for(int z=0; z < 4; ++z) {
-				progressBar.setValue(x*z);
 				pars3 = new Parser();
 				pars3.setUrl(l.get(x).url);
 				pars3.parse();
@@ -450,17 +516,18 @@ public class UI extends JApplet {
         }
  
         public void paint(Graphics g) {
-            g.setColor(Color.lightGray);
+            g.setColor(Color.black);
             Graphics2D g2d = (Graphics2D)g;
             Point2D center = radialLayout.getCenter();
              Ellipse2D ellipse = new Ellipse2D.Double();
             for(double d : depths) {
                 ellipse.setFrameFromDiagonal(center.getX()-d, center.getY()-d, center.getX()+d, center.getY()+d);
-                Shape shape = vv.getRenderContext().getMultiLayerTransformer().getTransformer(Layer.LAYOUT).transform(ellipse);
+                Shape shape =vv.getRenderContext().getMultiLayerTransformer().transform(ellipse);
+                // Shape shape = vv.getRenderContext().getMultiLayerTransformer().getTransformer(Layer.LAYOUT).transform(ellipse);
                 g2d.draw(shape);
             }
         }
- 
+        
         public boolean useTransform() {  return true;  }
     }
     class ClusterVertexShapeFunction<V> extends EllipseVertexShapeTransformer<V>
