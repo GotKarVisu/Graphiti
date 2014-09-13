@@ -91,27 +91,14 @@ public class UI extends JApplet {
 	final int windowSizeY = 600;
 	
 	static final String instructions = 
-            "<html>"+
-            "<b><h2><center>Instructions for Annotations</center></h2></b>"+
-            "<p>The Annotation Controls allow you to select:"+
-            "<ul>"+
-            "<li>Shape"+
-            "<li>Color"+
-            "<li>Fill (or outline)"+
-            "<li>Above or below (UPPER/LOWER) the graph display"+
-            "</ul>"+
-            "<p>Mouse Button one press starts a Shape,"+
-            "<p>drag and release to complete."+
-            "<p>Mouse Button three pops up an input dialog"+
-            "<p>for text. This will create a text annotation."+
-            "<p>You may use html for multi-line, etc."+
-            "<p>You may even use an image tag and image url"+
-            "<p>to put an image in the annotation."+
-            "<p><p>"+
-            "<p>To remove an annotation, shift-click on it"+
-            "<p>in the Annotations mode."+
-            "<p>If there is overlap, the Annotation with center"+
-            "<p>closest to the mouse point will be removed.";
+            "<html><body style=\"padding:20px;\">"+
+            "<h2><center>Instructions for Graphiti</center></h2>"+
+            "<br><ul><li>Hypyerbolic View</li>"+
+            "<li>Parse Tree in Realtime</li>"+
+            "<li>...</li></ul><br>"+
+            "<p>More Information...</p><br><hr><br>"+
+            "<p>This program was developed by:<br>Andre Karge and Sebastian Gottschlich<br>Bauhaus University Weimar - Summerterm 2014"
+            + "</body></html>";
     JDialog instDialog;
 
     Forest<String,Integer> graph;
@@ -148,6 +135,7 @@ public class UI extends JApplet {
     
     ArrayList<String> otherNodes = new ArrayList<String>();
     ArrayList<Integer> edgeList = new ArrayList<Integer>();
+    ArrayList<TreeElement> parsedGraph = new ArrayList<TreeElement>();
     boolean expanded = false;
     
     LensSupport hyperbolicViewSupport;
@@ -177,14 +165,24 @@ public class UI extends JApplet {
         vv.setBorder(border);
         
         vv.getRenderContext().setEdgeShapeTransformer(new EdgeShape.Line());
-        vv.getRenderer().setVertexRenderer(new GradientVertexRenderer<String,Integer>(Color.white, Color.red, Color.white, Color.blue, vv.getPickedVertexState(), false));
+        vv.getRenderer().setVertexRenderer(new GradientVertexRenderer<String,Integer>(Color.lightGray, Color.gray, Color.white, Color.blue, vv.getPickedVertexState(), false));
 
         Transformer<String, String> transformer = new Transformer<String, String>() {
             @Override public String transform(String arg0) { return arg0; }
         };
         Transformer<String, String> transformtip = new Transformer<String, String>() {
             @Override public String transform(String arg0) {
-            	return "Informationen zu "+arg0;
+            	//graph.getChildren(arg0);
+            	String text = "";
+            	
+            	
+            	if(graph.getChildCount(arg0)>0) {
+            		text = graph.getChildren(arg0).toString();
+            	}
+            	
+            	
+            	
+            	return text;
             }
         };
         
@@ -211,17 +209,20 @@ public class UI extends JApplet {
          
         JComboBox<String> modeBox = graphMouse.getModeComboBox();
         modeBox.addItemListener(graphMouse.getModeListener());
+    	modeBox.setBackground(new Color(180,180,180));
         graphMouse.setMode(ModalGraphMouse.Mode.PICKING);
  
         final ScalingControl scaler = new CrossoverScalingControl();
  
         JButton plus = new JButton("+");
+    	plus.setBackground(new Color(180,180,180));
         plus.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 scaler.scale(vv, 1.1f, vv.getCenter());
             }
         });
         JButton minus = new JButton("-");
+    	minus.setBackground(new Color(180,180,180));
         minus.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 scaler.scale(vv, 1/1.1f, vv.getCenter());
@@ -230,6 +231,8 @@ public class UI extends JApplet {
 
     	final JTextField tf  = new JTextField("", 30);
     	JButton button = new JButton("URL visualisieren");
+    	button.setBackground(new Color(150,0,0));
+    	button.setForeground(Color.white);
     	
         button.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -254,6 +257,7 @@ public class UI extends JApplet {
         });
     	            
         JToggleButton radial = new JToggleButton("Radial");
+    	radial.setBackground(new Color(180,180,180));
         radial.addItemListener(new ItemListener() {
              public void itemStateChanged(ItemEvent e) {
                 if(e.getStateChange() == ItemEvent.SELECTED) {
@@ -274,6 +278,7 @@ public class UI extends JApplet {
                 vv.repaint();
             }});
         JButton toggleOther = new JButton("Toggle Others");
+    	toggleOther.setBackground(new Color(180,180,180));
         toggleOther.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -311,6 +316,7 @@ public class UI extends JApplet {
         
         //TODO: nullpointer exception bei collapstem node, wenn man toggled
         JButton collapse = new JButton("Collapse");
+    	collapse.setBackground(new Color(180,180,180));
         collapse.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -331,6 +337,7 @@ public class UI extends JApplet {
             }});
         
         JButton expand = new JButton("Expand");
+    	expand.setBackground(new Color(180,180,180));
         expand.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
@@ -345,7 +352,8 @@ public class UI extends JApplet {
                 }
             }});
         
-        final JRadioButton hyperView = new JRadioButton("Hyperbolic View");
+        final JToggleButton hyperView = new JToggleButton("Hyperbolic-View");
+    	hyperView.setBackground(new Color(180,180,180));
         hyperView.addItemListener(new ItemListener(){
             public void itemStateChanged(ItemEvent e) {
                 hyperbolicViewSupport.activate(e.getStateChange() == ItemEvent.SELECTED);
@@ -361,6 +369,7 @@ public class UI extends JApplet {
         instDialog = new JDialog();
         instDialog.getContentPane().add(new JLabel(instructions));
         JButton instruction = new JButton("Instructions");
+    	instruction.setBackground(new Color(180,180,180));
         instruction.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 instDialog.pack();
@@ -368,40 +377,40 @@ public class UI extends JApplet {
             }
         });
         
-        JPanel controls = new JPanel();
+        JPanel controls = new JPanel(new GridLayout(2,2));
+        JPanel view = new JPanel();
+        view.setBorder(BorderFactory.createTitledBorder("Instructions"));
+        // Search URL
+	        JPanel searchGrid = new JPanel();
+	        searchGrid.setBorder(BorderFactory.createTitledBorder("Wikipedia-URL"));
+	    	searchGrid.add(tf);
+	    	searchGrid.add(button);
+	        controls.add(searchGrid);
         // Instructions
-        	controls.add(instruction);
+        	view.add(instruction);
+        	controls.add(view);
         // Scaling
-	        JPanel scaleGrid = new JPanel(new GridLayout(1,0));
+	        JPanel scaleGrid = new JPanel();
 	        scaleGrid.setBorder(BorderFactory.createTitledBorder("Zoom"));
         	scaleGrid.add(plus);
         	scaleGrid.add(minus);
+            scaleGrid.add(radial);
+        	scaleGrid.add(hyperView);
         	controls.add(scaleGrid);
-        // Search URL
-            JPanel searchGrid = new JPanel(new GridLayout(1,1));
-            searchGrid.setBorder(BorderFactory.createTitledBorder("Wikipedia-URL"));
-        	searchGrid.add(tf);
-        	searchGrid.add(button);
-            controls.add(searchGrid);
-        // Change View
-            controls.add(radial);
         // Control Vertices
             JPanel controlVertices = new JPanel();
             controlVertices.setBorder(BorderFactory.createTitledBorder("Control Vertices"));
             controlVertices.add(toggleOther);
         	controlVertices.add(collapse);
         	controlVertices.add(expand);
+        	controlVertices.add(modeBox);
         	controls.add(controlVertices);
-        // Transforming or Picking
-        	controls.add(modeBox);
-        // Hyperbolic View
-        	controls.add(hyperView);
-        	
+       	
         content.add(controls, BorderLayout.SOUTH);
         content.add(progressBar, BorderLayout.NORTH);
     }
     
-    public void paintVertex(RenderContext<String, String> rc, Layout<String, String> layout, String vertex) {
+    /*public void paintVertex(RenderContext<String, String> rc, Layout<String, String> layout, String vertex) {
           GraphicsDecorator graphicsContext = rc.getGraphicsContext();
           Point2D center = layout.transform(vertex);
           Shape shape = null;
@@ -418,7 +427,7 @@ public class UI extends JApplet {
           }
           graphicsContext.setPaint(color);
           graphicsContext.fill(shape);
-        }
+        } */
  
     private void createTree(String url) {
 		Parser parser = new Parser(url);
@@ -426,6 +435,9 @@ public class UI extends JApplet {
 		Parser pars3 = null;
 		ArrayList<Article> l = parser.getList();
 		String title = parser.getTitle();
+		// TODO: geparsten Graph in Array abspeichern.
+		TreeElement Tree = new TreeElement();
+
 		graph.addVertex(title);
 		for(int x=0; x < 10; ++x) {
 			pars2 = new Parser();
@@ -485,20 +497,6 @@ public class UI extends JApplet {
     	return true;
     }
     
-    public static void main(String[] args) {
-        JFrame frame = new JFrame("Graphiti - Visualize Wikipedia");
-        Container content = frame.getContentPane();
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        content.add(new UI(frame));
-        try {
-			frame.setIconImage(ImageIO.read(new File("icon.png")));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-        frame.pack();
-        frame.setVisible(true);
-    }
-    
     class Rings implements VisualizationServer.Paintable {
         
         Collection<Double> depths;
@@ -530,6 +528,7 @@ public class UI extends JApplet {
         
         public boolean useTransform() {  return true;  }
     }
+    
     class ClusterVertexShapeFunction<V> extends EllipseVertexShapeTransformer<V>
     {
 
@@ -564,5 +563,19 @@ public class UI extends JApplet {
             }
             return size;
         }
+    }
+    
+    public static void main(String[] args) {
+        JFrame frame = new JFrame("Graphiti - Visualize Wikipedia");
+        Container content = frame.getContentPane();
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        content.add(new UI(frame));
+        try {
+			frame.setIconImage(ImageIO.read(new File("icon.png")));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+        frame.pack();
+        frame.setVisible(true);
     }
 }
