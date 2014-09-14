@@ -91,8 +91,8 @@ public class Parser {
 			this.title = tmp.substring(0, tmp.length()-12);
 		}
 	}
-	public String setTeaser() {
-		return this.teaser;
+	public void setTeaser() {
+		this.teaser = "";
 	}
 
 	private void cleanList() {

@@ -11,7 +11,6 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridLayout;
-import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -38,7 +37,6 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
-import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 import javax.swing.JToggleButton;
 import javax.swing.border.Border;
@@ -47,7 +45,6 @@ import org.apache.commons.collections15.Factory;
 import org.apache.commons.collections15.Transformer;
 import org.apache.commons.collections15.functors.ConstantTransformer;
 
-import edu.uci.ics.jung.algorithms.layout.Layout;
 import edu.uci.ics.jung.algorithms.layout.PolarPoint;
 import edu.uci.ics.jung.algorithms.layout.RadialTreeLayout;
 import edu.uci.ics.jung.algorithms.layout.TreeLayout;
@@ -60,7 +57,6 @@ import edu.uci.ics.jung.graph.Graph;
 import edu.uci.ics.jung.graph.Tree;
 import edu.uci.ics.jung.visualization.GraphZoomScrollPane;
 import edu.uci.ics.jung.visualization.Layer;
-import edu.uci.ics.jung.visualization.RenderContext;
 import edu.uci.ics.jung.visualization.VisualizationServer;
 import edu.uci.ics.jung.visualization.VisualizationViewer;
 import edu.uci.ics.jung.visualization.control.CrossoverScalingControl;
@@ -79,11 +75,9 @@ import edu.uci.ics.jung.visualization.renderers.GradientVertexRenderer;
 import edu.uci.ics.jung.visualization.renderers.Renderer.VertexLabel.Position;
 import edu.uci.ics.jung.visualization.subLayout.TreeCollapser;
 import edu.uci.ics.jung.visualization.transform.LensSupport;
-import edu.uci.ics.jung.visualization.transform.shape.GraphicsDecorator;
 import edu.uci.ics.jung.visualization.transform.shape.HyperbolicShapeTransformer;
 import edu.uci.ics.jung.visualization.transform.shape.ViewLensSupport;
 import edu.uci.ics.jung.visualization.util.Animator;
-
 
 @SuppressWarnings("serial")
 public class UI extends JApplet {
@@ -127,22 +121,21 @@ public class UI extends JApplet {
 
     VisualizationViewer<String,Integer> vv;
     VisualizationServer.Paintable rings;
-    String root;
-    String startUrl = null;
     TreeLayout<String,Integer> treeLayout;
     RadialTreeLayout<String,Integer> radialLayout;
-    JProgressBar progressBar;
     
     ArrayList<String> otherNodes = new ArrayList<String>();
     ArrayList<Integer> edgeList = new ArrayList<Integer>();
     ArrayList<TreeElement> parsedGraph = new ArrayList<TreeElement>();
-    boolean expanded = false;
     
+    JProgressBar progressBar;
+    String root, startUrl;
+    boolean expanded = false;
     LensSupport hyperbolicViewSupport;
- 
-    public UI(JFrame frame) {
-        graph = new DelegateForest<String,Integer>();
 
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+	public UI(JFrame frame) {
+        graph = new DelegateForest<String,Integer>();
         treeLayout = new TreeLayout<String,Integer>(graph);
         radialLayout = new RadialTreeLayout<String,Integer>(graph);
         final TreeCollapser collapser = new TreeCollapser();
@@ -150,6 +143,7 @@ public class UI extends JApplet {
         vv =  new VisualizationViewer<String,Integer>(radialLayout, new Dimension(windowSizeX,windowSizeY));
         
         vv.getRenderContext().setVertexLabelRenderer(new DefaultVertexLabelRenderer(Color.blue));
+        vv.getRenderContext().setVertexStrokeTransformer(new ConstantTransformer(new BasicStroke(2.0f)));
         vv.getRenderContext().setEdgeStrokeTransformer(new ConstantTransformer(new BasicStroke(1.5f)));
         //vv.getRenderContext().setVertexLabelTransformer(new ToStringLabeller<String>());
         vv.getRenderer().getVertexLabelRenderer().setPosition(Position.CNTR);
@@ -164,11 +158,13 @@ public class UI extends JApplet {
         border = BorderFactory.createLoweredBevelBorder();
         vv.setBorder(border);
         
-        vv.getRenderContext().setEdgeShapeTransformer(new EdgeShape.Line());
+        vv.getRenderContext().setEdgeShapeTransformer(new EdgeShape.Line<String,Integer>());
         vv.getRenderer().setVertexRenderer(new GradientVertexRenderer<String,Integer>(Color.lightGray, Color.gray, Color.white, Color.blue, vv.getPickedVertexState(), false));
 
         Transformer<String, String> transformer = new Transformer<String, String>() {
-            @Override public String transform(String arg0) { return arg0; }
+            @Override public String transform(String arg0) {
+            	return arg0;
+            	}
         };
         Transformer<String, String> transformtip = new Transformer<String, String>() {
             @Override public String transform(String arg0) {
@@ -180,8 +176,6 @@ public class UI extends JApplet {
             		text = graph.getChildren(arg0).toString();
             	}
             	
-            	
-            	
             	return text;
             }
         };
@@ -190,8 +184,27 @@ public class UI extends JApplet {
         vv.getRenderContext().setEdgeShapeTransformer(new EdgeShape.Line<String, Integer>());
        // vv.getRenderContext().setVertexLabelTransformer(new ToStringLabeller<String>());
         vv.setVertexToolTipTransformer(transformtip);
-        vv.getRenderContext().setArrowFillPaintTransformer(new ConstantTransformer(Color.lightGray));
         
+        // Wenn auf Vertex geklickt wurde, dann wird die Funktion ausgefuehrt.
+        final PickedState<String> pickedState = vv.getPickedVertexState();
+        pickedState.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                Object subject = e.getItem();
+                if (subject instanceof String) {
+                    String vertex = (String) subject;
+                    if (pickedState.isPicked(vertex)) {
+                    	int size = parsedGraph.size();
+                    	for(int x=0; x < size; ++x) {
+                    		if(parsedGraph.get(x).title.equals(vertex) && graph.getChildCount(vertex)==0) {
+                    			parseChildrens(parsedGraph.get(x));
+                    		}
+                    	}
+                    }
+                }
+            }
+        });
+
         hyperbolicViewSupport = 
                 new ViewLensSupport<String,Integer>(vv, new HyperbolicShapeTransformer(vv, 
                 		vv.getRenderContext().getMultiLayerTransformer().getTransformer(Layer.VIEW)), 
@@ -237,20 +250,13 @@ public class UI extends JApplet {
         button.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
             	// TODO: Brauchen URL-Checker (Ist es ein Wikipedia-link?)
-            	if(!tf.getText().equals("")) {
+            	if(!tf.getText().equals("") && tf.getText().contains("wikipedia")) {
             		startUrl = tf.getText().toString();
             		deleteTree();
             		setProgress(1);
             		vv.removeAll();
-            		createTree(startUrl);
-            		// TODO: Kann manche URLs nicht in den graph speichern - Null Pointer
-            		radialLayout = new RadialTreeLayout<String,Integer>(graph);
-                    radialLayout.setSize(new Dimension(windowSizeX,windowSizeY));
-            		treeLayout = new RadialTreeLayout<String,Integer>(graph);
-                    treeLayout.setSize(new Dimension(windowSizeX,windowSizeY));
-            		vv.addPreRenderPaintable(rings);
-                    vv.setGraphLayout(radialLayout);
-            		vv.repaint();
+            		createTree(startUrl); // TODO: Kann manche URLs nicht in den graph speichern - Null Pointer
+            		newPaint();
             	} else
             		JOptionPane.showMessageDialog(frame, "Invalid Wikipedia-URL.");
             }
@@ -261,15 +267,13 @@ public class UI extends JApplet {
         radial.addItemListener(new ItemListener() {
              public void itemStateChanged(ItemEvent e) {
                 if(e.getStateChange() == ItemEvent.SELECTED) {
-                    LayoutTransition<String,Integer> lt =
-                        new LayoutTransition<String,Integer>(vv, treeLayout, radialLayout);
+                    LayoutTransition<String,Integer> lt = new LayoutTransition<String,Integer>(vv, treeLayout, radialLayout);
                     Animator animator = new Animator(lt);
                     animator.start();
                     vv.getRenderContext().getMultiLayerTransformer().setToIdentity();
                     vv.addPreRenderPaintable(rings);
                 } else {
-                    LayoutTransition<String,Integer> lt =
-                        new LayoutTransition<String,Integer>(vv, radialLayout, treeLayout);
+                    LayoutTransition<String,Integer> lt = new LayoutTransition<String,Integer>(vv, radialLayout, treeLayout);
                     Animator animator = new Animator(lt);
                     animator.start();
                     vv.getRenderContext().getMultiLayerTransformer().setToIdentity();
@@ -283,6 +287,7 @@ public class UI extends JApplet {
 
             public void actionPerformed(ActionEvent e) {
             	if(expanded) {
+            		// TODO: Warum ist s unused?
             		for(String s : otherNodes) {
             			for(int edge : edgeList) {
             				graph.removeEdge(edge);
@@ -291,10 +296,7 @@ public class UI extends JApplet {
             				graph.removeVertex(v);
             			}
             			vv.removeAll();
-                		radialLayout = new RadialTreeLayout<String,Integer>(graph);
-                        radialLayout.setSize(new Dimension(windowSizeX,windowSizeY));
-                        vv.setGraphLayout(radialLayout);
-                		vv.repaint();
+                		newPaint();
             		}
             		expanded = false;
             	}
@@ -306,10 +308,7 @@ public class UI extends JApplet {
             			graph.addEdge(num,"other", s);
             		}
             		vv.removeAll();
-            		radialLayout = new RadialTreeLayout<String,Integer>(graph);
-                    radialLayout.setSize(new Dimension(windowSizeX,windowSizeY));
-                    vv.setGraphLayout(radialLayout);
-            		vv.repaint();
+            		newPaint();
             		expanded = true;
             	}
             }});
@@ -318,12 +317,11 @@ public class UI extends JApplet {
         JButton collapse = new JButton("Collapse");
     	collapse.setBackground(new Color(180,180,180));
         collapse.addActionListener(new ActionListener() {
-
             public void actionPerformed(ActionEvent e) {
-            	Collection picked =new HashSet(vv.getPickedVertexState().getPicked());
+            	Collection<String> picked = new HashSet(vv.getPickedVertexState().getPicked());
                 if(picked.size() == 1) {
                 	Object root = picked.iterator().next();
-                    Forest inGraph = (Forest)treeLayout.getGraph();
+                	Forest<String,Integer> inGraph = (Forest<String,Integer>)treeLayout.getGraph();
                     try {
 						collapser.collapse(vv.getGraphLayout(), inGraph, root);
 					} catch (InstantiationException e1) {
@@ -339,19 +337,19 @@ public class UI extends JApplet {
         JButton expand = new JButton("Expand");
     	expand.setBackground(new Color(180,180,180));
         expand.addActionListener(new ActionListener() {
-
-            public void actionPerformed(ActionEvent e) {
-                Collection picked = vv.getPickedVertexState().getPicked();
+			public void actionPerformed(ActionEvent e) {
+                Collection<String> picked = vv.getPickedVertexState().getPicked();
                 for(Object v : picked) {
                     if(v instanceof Forest) {
-                        Forest inGraph = (Forest)treeLayout.getGraph();
-            			collapser.expand(inGraph, (Forest)v);
+                        Forest<String,Integer> inGraph = (Forest<String,Integer>) treeLayout.getGraph();
+            			collapser.expand(inGraph, (Forest<String,Integer>) v);
                     }
                     vv.getPickedVertexState().clear();
                    vv.repaint();
                 }
             }});
         
+
         final JToggleButton hyperView = new JToggleButton("Hyperbolic-View");
     	hyperView.setBackground(new Color(180,180,180));
         hyperView.addItemListener(new ItemListener(){
@@ -359,6 +357,7 @@ public class UI extends JApplet {
                 hyperbolicViewSupport.activate(e.getStateChange() == ItemEvent.SELECTED);
             }
         });
+        
         graphMouse.addItemListener(hyperbolicViewSupport.getGraphMouse().getModeListener());
  
         progressBar = new JProgressBar();
@@ -378,6 +377,7 @@ public class UI extends JApplet {
         });
         
         JPanel controls = new JPanel(new GridLayout(2,2));
+		controls.setBorder(BorderFactory.createLineBorder(Color.gray, 3));
         JPanel view = new JPanel();
         view.setBorder(BorderFactory.createTitledBorder("Instructions"));
         // Search URL
@@ -409,44 +409,24 @@ public class UI extends JApplet {
         content.add(controls, BorderLayout.SOUTH);
         content.add(progressBar, BorderLayout.NORTH);
     }
-    
-    /*public void paintVertex(RenderContext<String, String> rc, Layout<String, String> layout, String vertex) {
-          GraphicsDecorator graphicsContext = rc.getGraphicsContext();
-          Point2D center = layout.transform(vertex);
-          Shape shape = null;
-          Color color = null;
-          if(vertex.equals("Square")) {
-            shape = new Rectangle((int)center.getX()-10, (int)center.getY()-10, 20, 20);
-            color = new Color(127, 127, 0);
-          } else if(vertex.equals("Rectangle")) {
-            shape = new Rectangle((int)center.getX()-10, (int)center.getY()-20, 20, 40);
-            color = new Color(127, 0, 127);
-          } else if(vertex.equals("Weimar")) {
-            shape = new Ellipse2D.Double(center.getX()-10, center.getY()-10, 20, 20);
-            color = new Color(0, 20, 255);
-          }
-          graphicsContext.setPaint(color);
-          graphicsContext.fill(shape);
-        } */
- 
+
     private void createTree(String url) {
 		Parser parser = new Parser(url);
 		Parser pars2 = null;
 		Parser pars3 = null;
 		ArrayList<Article> l = parser.getList();
 		String title = parser.getTitle();
-		// TODO: geparsten Graph in Array abspeichern.
-		TreeElement Tree = new TreeElement();
-
 		graph.addVertex(title);
+		parsedGraph.add(new TreeElement(title, url));
 		for(int x=0; x < 10; ++x) {
 			pars2 = new Parser();
-			if(!graph.containsVertex(l.get(x).titel)) {
-				graph.addVertex(l.get(x).titel);
-			}
-			graph.addEdge(edgeFactory.create(), title, l.get(x).titel);
 			pars2.setUrl(l.get(x).url);
 			pars2.parse();
+			if(!graph.containsVertex(l.get(x).titel)) {
+				graph.addVertex(l.get(x).titel);
+				parsedGraph.add(new TreeElement(l.get(x).titel, l.get(x).url));
+				graph.addEdge(edgeFactory.create(), title, l.get(x).titel);
+			}
 			ArrayList<Article> l1 = pars2.getList();
 			for(int z=0; z < 4; ++z) {
 				pars3 = new Parser();
@@ -454,6 +434,7 @@ public class UI extends JApplet {
 				pars3.parse();
 				if(!graph.containsVertex(l1.get(z).titel)) {
 					graph.addVertex(l1.get(z).titel);
+					parsedGraph.add(new TreeElement(l1.get(x).titel, l1.get(x).url));
 					graph.addEdge(edgeFactory.create(), l.get(x).titel, l1.get(z).titel);
 				}
 				pars3 = null;
@@ -475,6 +456,28 @@ public class UI extends JApplet {
 		//TODO: auto collapse
 //		PickedState st
 //		vv.setPickedVertexState();
+    }
+
+    private void parseChildrens(TreeElement root) {
+    	Parser parser = new Parser(root.url);
+		ArrayList<Article> l = parser.getList();
+		for(int x=0; x < 5; ++x) {
+			parsedGraph.add(new TreeElement(l.get(x).titel, l.get(x).url));
+			if(!graph.containsVertex(l.get(x).titel)) {
+				graph.addVertex(l.get(x).titel);
+				graph.addEdge(edgeFactory.create(), root.title, l.get(x).titel);
+			}
+		}
+		newPaint();
+    }
+    
+    public void newPaint() {
+		radialLayout = new RadialTreeLayout<String,Integer>(graph);
+        radialLayout.setSize(new Dimension(windowSizeX,windowSizeY));
+		treeLayout = new RadialTreeLayout<String,Integer>(graph);
+        treeLayout.setSize(new Dimension(windowSizeX,windowSizeY));
+        vv.setGraphLayout(radialLayout);
+		vv.repaint();
     }
     
     private void setProgress(int value) {
@@ -517,10 +520,10 @@ public class UI extends JApplet {
             g.setColor(Color.black);
             Graphics2D g2d = (Graphics2D)g;
             Point2D center = radialLayout.getCenter();
-             Ellipse2D ellipse = new Ellipse2D.Double();
+            Ellipse2D ellipse = new Ellipse2D.Double();
             for(double d : depths) {
                 ellipse.setFrameFromDiagonal(center.getX()-d, center.getY()-d, center.getX()+d, center.getY()+d);
-                Shape shape =vv.getRenderContext().getMultiLayerTransformer().transform(ellipse);
+                Shape shape = vv.getRenderContext().getMultiLayerTransformer().transform(ellipse);
                 // Shape shape = vv.getRenderContext().getMultiLayerTransformer().getTransformer(Layer.LAYOUT).transform(ellipse);
                 g2d.draw(shape);
             }
@@ -535,11 +538,11 @@ public class UI extends JApplet {
             ClusterVertexShapeFunction() {
                 setSizeTransformer(new ClusterVertexSizeFunction<V>(20));
             }
-            @SuppressWarnings("unchecked")
     		@Override
             public Shape transform(V v) {
                 if(v instanceof Graph) {
-                    int size = ((Graph)v).getVertexCount();
+                    @SuppressWarnings("rawtypes")
+					int size = ((Graph)v).getVertexCount();
                     if (size < 8) {   
                         int sides = Math.max(size, 3);
                         return factory.getRegularPolygon(v, sides);

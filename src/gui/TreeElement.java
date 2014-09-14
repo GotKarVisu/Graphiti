@@ -1,45 +1,29 @@
 package gui;
 
-import java.util.ArrayList;
-
-import wiki_parser.Article;
-
 public class TreeElement {
-	public Article node;
-	public String parentNode;
-	public ArrayList<String> childNodes;
-	public String titel;
+	public String title;
+	public String url;
 	
 	public TreeElement() {
-		this.node = new Article();
-		this.parentNode = "";
-		this.childNodes = new ArrayList<String>();
-		this.titel = "";
+		this.title = "";
+		this.url = "";
 	}
 	
-	public void setTitel(String value) {
-		this.titel = value;
+	public TreeElement(String title, String url) {
+		this.title = title;
+		this.url = url;
 	}
-	public String getTitel() {
-		return this.titel;
+	public void setUrl(String value) {
+		this.url = value;
 	}
-	public void setNode(Article value) {
-		this.node = value;
+	public String getTitle() {
+		return this.title;
 	}
-	public Article getNode() {
-		return this.node;
+	public void setTitle(String value) {
+		this.title = value;
 	}
-	public void setParentNode(String value) {
-		this.parentNode = value;
-	}
-	public String getParentNode() {
-		return this.parentNode;
-	}
-	public void setChildren(String value) {
-		this.childNodes.add(value);
-	}
-	public ArrayList<String> getChildren() {
-		return this.childNodes;
+	public String getUrl() {
+		return this.url;
 	}
 
 }
