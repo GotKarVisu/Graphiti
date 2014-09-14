@@ -11,7 +11,6 @@ import org.jsoup.select.Elements;
 public class Parser {
 	private String url;
 	private String title;
-	private String teaser;
 	private ArrayList<Article> list;
 	private Document doc;
 	private String text;
@@ -19,14 +18,12 @@ public class Parser {
 	public Parser() {
 		this.url = "";
 		this.title = "";
-		this.teaser = "";
 		this.list = new ArrayList<Article>();
 		this.doc = null;
 	}
 	public Parser(String inUrl) {
 		this.url = inUrl;
 		this.title = "";
-		this.teaser = "";
 		this.list = new ArrayList<Article>();
 		this.doc = null;
 		parse();
@@ -35,7 +32,6 @@ public class Parser {
 	public Parser(Parser cpy) {
 		this.url = cpy.url;
 		this.title = cpy.title;
-		this.teaser = cpy.teaser;
 		this.list = cpy.list;
 		this.doc = cpy.doc;
 	}
@@ -45,7 +41,6 @@ public class Parser {
 		parseDocument();
 		makeList();
 		setTitle();
-		setTeaser();
 		cleanList();
 		sort(list);
 	}
@@ -58,9 +53,6 @@ public class Parser {
 	}
 	public String getTitle() {
 		return this.title;
-	}
-	public String getTeaser() {
-		return this.teaser;
 	}
 	public ArrayList<Article> getList() {
 		return this.list;
@@ -91,10 +83,7 @@ public class Parser {
 			this.title = tmp.substring(0, tmp.length()-12);
 		}
 	}
-	public void setTeaser() {
-		this.teaser = "";
-	}
-
+	
 	private void cleanList() {
 		ArrayList<Article> tmp = new ArrayList<Article>();
 		for(Article a : this.list) {

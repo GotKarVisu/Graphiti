@@ -80,7 +80,7 @@ import edu.uci.ics.jung.visualization.transform.shape.HyperbolicShapeTransformer
 import edu.uci.ics.jung.visualization.transform.shape.ViewLensSupport;
 import edu.uci.ics.jung.visualization.util.Animator;
 
-
+@SuppressWarnings("serial")
 public class UI extends JApplet {
 	final int windowSizeX = 800;
 	final int windowSizeY = 600;
@@ -162,32 +162,23 @@ public class UI extends JApplet {
         vv.getRenderContext().setEdgeShapeTransformer(new EdgeShape.Line<String,Integer>());
         vv.getRenderer().setVertexRenderer(new GradientVertexRenderer<String,Integer>(Color.lightGray, Color.gray, Color.white, Color.blue, vv.getPickedVertexState(), false));
 
-//        Transformer<String, String> transformer = new Transformer<String, String>() {
-//            @Override public String transform(String arg0) {
-//            	return arg0;
-//            	}
-//        };
         Transformer<String, String> transformtip = new Transformer<String, String>() {
             @Override public String transform(String arg0) {
-            	String text = "";
-            	if(graph.getChildCount(arg0)>0) {
-                	int size = parsedGraph.size();
-                	int count = 0;
-                		for(int x=0; x < size; ++x) {
-                		count = ((parsedGraph.get(x).titel.equals(arg0) && count == 0) ? parsedGraph.get(x).count : 0);
-                	}
-            		text = "\n\nVorkommnisse im Artikel '"+ graph.getParent(arg0).toString() +"': "+count;
-            	}
-            	
-            	return text;
+            	int size = parsedGraph.size();
+            	Article node = new Article();
+        		for(int x=0; x < size; ++x) {
+        			if(parsedGraph.get(x).titel.equals(arg0)) {
+        				node = parsedGraph.get(x);
+        				continue;
+        			}
+        		}
+        		return "<html><p><b>"+node.titel+"</b> (in '"+ graph.getParent(arg0).toString() +"': "+node.count+")<br>"+node.teaser+"<br><br>"+node.url+"</p></html>";
             }
         };
-        
-//        vv.getRenderContext().setVertexLabelTransformer(transformer);
+
         vv.getRenderContext().setEdgeShapeTransformer(new EdgeShape.Line<String, Integer>());
         vv.getRenderContext().setVertexLabelTransformer(new ToStringLabeller<String>());
         vv.setVertexToolTipTransformer(transformtip);
-        
         // Wenn auf Vertex geklickt wurde, dann wird die Funktion ausgefuehrt.
         final PickedState<String> pickedState = vv.getPickedVertexState();
         pickedState.addItemListener(new ItemListener() {
@@ -258,7 +249,7 @@ public class UI extends JApplet {
             		deleteTree();
             		setProgress(1);
             		vv.removeAll();
-            		createTree(startUrl); // TODO: Kann manche URLs nicht in den graph speichern - Null Pointer
+            		createTree(startUrl);
             		newPaint();
             	} else
             		JOptionPane.showMessageDialog(frame, "Invalid Wikipedia-URL.");
@@ -432,6 +423,7 @@ public class UI extends JApplet {
 		ArrayList<Article> l = parser.getList();
 		String title = parser.getTitle();
 		graph.addVertex(title);
+		int size = (l.size()>=10 ? 10 : l.size()); 
 		for(int x=0; x < 10; ++x) {
 			pars2 = new Parser();
 			pars2.setUrl(l.get(x).url);
@@ -443,7 +435,8 @@ public class UI extends JApplet {
 				graph.addEdge(edgeFactory.create(), title, titel2);
 			}
 			ArrayList<Article> l1 = pars2.getList();
-			for(int z=0; z < 4; ++z) {
+			int size2 = (l1.size()>=5 ? 5 : l1.size()); 
+			for(int z=0; z < size2; ++z) {
 				pars3 = new Parser();
 				pars3.setUrl(l.get(x).url);
 				pars3.parse();
@@ -460,8 +453,8 @@ public class UI extends JApplet {
 		}
 		graph.addVertex("other");
 		graph.addEdge(edgeFactory.create(),title, "other");
-		int size = l.size();
-		for(int i=10; i<size; ++i) {
+		int sizeOther = ((l.size())>=10 ? l.size() : 10); 
+		for(int i=10; i<=size; ++i) {
 			if(!graph.containsVertex(l.get(i).titel)) {
 				otherNodes.add(l.get(i).titel);
 //				graph.addVertex(l.get(i).titel);
