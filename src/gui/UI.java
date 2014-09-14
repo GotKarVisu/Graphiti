@@ -80,7 +80,7 @@ import edu.uci.ics.jung.visualization.transform.shape.HyperbolicShapeTransformer
 import edu.uci.ics.jung.visualization.transform.shape.ViewLensSupport;
 import edu.uci.ics.jung.visualization.util.Animator;
 
-@SuppressWarnings("serial")
+
 public class UI extends JApplet {
 	final int windowSizeX = 800;
 	final int windowSizeY = 600;
@@ -127,7 +127,7 @@ public class UI extends JApplet {
     
     ArrayList<String> otherNodes = new ArrayList<String>();
     ArrayList<Integer> edgeList = new ArrayList<Integer>();
-    ArrayList<TreeElement> parsedGraph = new ArrayList<TreeElement>();
+    ArrayList<Article> parsedGraph = new ArrayList<Article>();
     
     JProgressBar progressBar;
     String root, startUrl;
@@ -147,7 +147,6 @@ public class UI extends JApplet {
         vv.getRenderContext().setVertexLabelRenderer(new DefaultVertexLabelRenderer(Color.blue));
         vv.getRenderContext().setVertexStrokeTransformer(new ConstantTransformer(new BasicStroke(2.0f)));
         vv.getRenderContext().setEdgeStrokeTransformer(new ConstantTransformer(new BasicStroke(1.5f)));
-        //vv.getRenderContext().setVertexLabelTransformer(new ToStringLabeller<String>());
         vv.getRenderer().getVertexLabelRenderer().setPosition(Position.CNTR);
 
         PickedState<String> ps = vv.getPickedVertexState();
@@ -170,12 +169,14 @@ public class UI extends JApplet {
 //        };
         Transformer<String, String> transformtip = new Transformer<String, String>() {
             @Override public String transform(String arg0) {
-            	//graph.getChildren(arg0);
             	String text = "";
-            	
-            	
             	if(graph.getChildCount(arg0)>0) {
-            		text = graph.getChildren(arg0).toString();
+                	int size = parsedGraph.size();
+                	int count = 0;
+                		for(int x=0; x < size; ++x) {
+                		count = ((parsedGraph.get(x).titel.equals(arg0) && count == 0) ? parsedGraph.get(x).count : 0);
+                	}
+            		text = "\n\nVorkommnisse im Artikel '"+ graph.getParent(arg0).toString() +"': "+count;
             	}
             	
             	return text;
@@ -198,7 +199,7 @@ public class UI extends JApplet {
                     if (pickedState.isPicked(vertex)) {
                     	int size = parsedGraph.size();
                     	for(int x=0; x < size; ++x) {
-                    		if(parsedGraph.get(x).title.equals(vertex) && graph.getChildCount(vertex)==0) {
+                    		if(parsedGraph.get(x).titel.equals(vertex) && graph.getChildCount(vertex)==0) {
                     			parseChildrens(parsedGraph.get(x));
                     		}
                     	}
@@ -431,25 +432,26 @@ public class UI extends JApplet {
 		ArrayList<Article> l = parser.getList();
 		String title = parser.getTitle();
 		graph.addVertex(title);
-		parsedGraph.add(new TreeElement(title, url));
 		for(int x=0; x < 10; ++x) {
 			pars2 = new Parser();
 			pars2.setUrl(l.get(x).url);
 			pars2.parse();
-			if(!graph.containsVertex(l.get(x).titel)) {
-				graph.addVertex(l.get(x).titel);
-				parsedGraph.add(new TreeElement(l.get(x).titel, l.get(x).url));
-				graph.addEdge(edgeFactory.create(), title, l.get(x).titel);
+			String titel2 = l.get(x).titel;
+			if(!graph.containsVertex(titel2)) {
+				graph.addVertex(titel2);
+				parsedGraph.add(l.get(x));
+				graph.addEdge(edgeFactory.create(), title, titel2);
 			}
 			ArrayList<Article> l1 = pars2.getList();
 			for(int z=0; z < 4; ++z) {
 				pars3 = new Parser();
 				pars3.setUrl(l.get(x).url);
 				pars3.parse();
-				if(!graph.containsVertex(l1.get(z).titel)) {
-					graph.addVertex(l1.get(z).titel);
-					parsedGraph.add(new TreeElement(l1.get(x).titel, l1.get(x).url));
-					graph.addEdge(edgeFactory.create(), l.get(x).titel, l1.get(z).titel);
+				String titel3 = l1.get(z).titel;
+				if(!graph.containsVertex(titel3)) {
+					graph.addVertex(titel3);
+					parsedGraph.add(l1.get(z));
+					graph.addEdge(edgeFactory.create(), titel2, titel3);
 				}
 				pars3 = null;
 			}
@@ -458,7 +460,8 @@ public class UI extends JApplet {
 		}
 		graph.addVertex("other");
 		graph.addEdge(edgeFactory.create(),title, "other");
-		for(int i=10; i<l.size(); ++i) {
+		int size = l.size();
+		for(int i=10; i<size; ++i) {
 			if(!graph.containsVertex(l.get(i).titel)) {
 				otherNodes.add(l.get(i).titel);
 //				graph.addVertex(l.get(i).titel);
@@ -472,14 +475,15 @@ public class UI extends JApplet {
 //		vv.setPickedVertexState();
     }
 
-    private void parseChildrens(TreeElement root) {
+    private void parseChildrens(Article root) {
     	Parser parser = new Parser(root.url);
 		ArrayList<Article> l = parser.getList();
-		for(int x=0; x < 5; ++x) {
-			parsedGraph.add(new TreeElement(l.get(x).titel, l.get(x).url));
+		int size = (l.size()>=5 ? 5 : l.size()); 
+		for(int x=0; x < size; ++x) {
+			parsedGraph.add(l.get(x));
 			if(!graph.containsVertex(l.get(x).titel)) {
 				graph.addVertex(l.get(x).titel);
-				graph.addEdge(edgeFactory.create(), root.title, l.get(x).titel);
+				graph.addEdge(edgeFactory.create(), root.titel, l.get(x).titel);
 			}
 		}
 		newPaint();
@@ -538,7 +542,6 @@ public class UI extends JApplet {
             for(double d : depths) {
                 ellipse.setFrameFromDiagonal(center.getX()-d, center.getY()-d, center.getX()+d, center.getY()+d);
                 Shape shape = vv.getRenderContext().getMultiLayerTransformer().transform(ellipse);
-                // Shape shape = vv.getRenderContext().getMultiLayerTransformer().getTransformer(Layer.LAYOUT).transform(ellipse);
                 g2d.draw(shape);
             }
         }
@@ -548,32 +551,30 @@ public class UI extends JApplet {
     
     class ClusterVertexShapeFunction<V> extends EllipseVertexShapeTransformer<V>
     {
-
-            ClusterVertexShapeFunction() {
-                setSizeTransformer(new ClusterVertexSizeFunction<V>(20));
-            }
-    		@Override
-            public Shape transform(V v) {
-                if(v instanceof Graph) {
-                    @SuppressWarnings("rawtypes")
-					int size = ((Graph)v).getVertexCount();
-                    if (size < 8) {   
-                        int sides = Math.max(size, 3);
-                        return factory.getRegularPolygon(v, sides);
-                    }
-                    else {
-                        return factory.getRegularStar(v, 8);
-                    }
-                }
-                return super.transform(v);
-            }
+        ClusterVertexShapeFunction() {
+            setSizeTransformer(new ClusterVertexSizeFunction<V>(20));
         }
+		@Override
+        public Shape transform(V v) {
+            if(v instanceof Graph) {
+                @SuppressWarnings("rawtypes")
+				int size = ((Graph)v).getVertexCount();
+                if (size < 8) {   
+                    int sides = Math.max(size, 3);
+                    return factory.getRegularPolygon(v, sides);
+                }
+                else {
+                    return factory.getRegularStar(v, 8);
+                }
+            }
+            return super.transform(v);
+        }
+    }
     class ClusterVertexSizeFunction<V> implements Transformer<V,Integer> {
     	int size;
         public ClusterVertexSizeFunction(Integer size) {
             this.size = size;
         }
-
         public Integer transform(V v) {
             if(v instanceof Graph) {
                 return 30;
@@ -583,7 +584,7 @@ public class UI extends JApplet {
     }
     
     public static void main(String[] args) {
-        JFrame frame = new JFrame("Graphiti - Visualize Wikipedia");
+        JFrame frame = new JFrame("GRAPHITI - Visualize Wikipedia Now");
         Container content = frame.getContentPane();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         content.add(new UI(frame));

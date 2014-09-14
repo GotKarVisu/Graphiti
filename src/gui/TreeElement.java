@@ -1,7 +1,10 @@
 package gui;
 
+import wiki_parser.Article;
+
 public class TreeElement {
-	public String title;
+	private String title;
+	private Article article; 
 	public String url;
 	
 	public TreeElement() {
