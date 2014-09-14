@@ -68,6 +68,7 @@ import edu.uci.ics.jung.visualization.decorators.EdgeShape;
 import edu.uci.ics.jung.visualization.decorators.EllipseVertexShapeTransformer;
 import edu.uci.ics.jung.visualization.decorators.PickableEdgePaintTransformer;
 import edu.uci.ics.jung.visualization.decorators.PickableVertexPaintTransformer;
+import edu.uci.ics.jung.visualization.decorators.ToStringLabeller;
 import edu.uci.ics.jung.visualization.layout.LayoutTransition;
 import edu.uci.ics.jung.visualization.picking.PickedState;
 import edu.uci.ics.jung.visualization.renderers.DefaultVertexLabelRenderer;
@@ -131,10 +132,11 @@ public class UI extends JApplet {
     JProgressBar progressBar;
     String root, startUrl;
     boolean expanded = false;
+    boolean hyperbola = false;
     LensSupport hyperbolicViewSupport;
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-	public UI(JFrame frame) {
+	public UI(final JFrame frame) {
         graph = new DelegateForest<String,Integer>();
         treeLayout = new TreeLayout<String,Integer>(graph);
         radialLayout = new RadialTreeLayout<String,Integer>(graph);
@@ -161,11 +163,11 @@ public class UI extends JApplet {
         vv.getRenderContext().setEdgeShapeTransformer(new EdgeShape.Line<String,Integer>());
         vv.getRenderer().setVertexRenderer(new GradientVertexRenderer<String,Integer>(Color.lightGray, Color.gray, Color.white, Color.blue, vv.getPickedVertexState(), false));
 
-        Transformer<String, String> transformer = new Transformer<String, String>() {
-            @Override public String transform(String arg0) {
-            	return arg0;
-            	}
-        };
+//        Transformer<String, String> transformer = new Transformer<String, String>() {
+//            @Override public String transform(String arg0) {
+//            	return arg0;
+//            	}
+//        };
         Transformer<String, String> transformtip = new Transformer<String, String>() {
             @Override public String transform(String arg0) {
             	//graph.getChildren(arg0);
@@ -180,9 +182,9 @@ public class UI extends JApplet {
             }
         };
         
-        vv.getRenderContext().setVertexLabelTransformer(transformer);
+//        vv.getRenderContext().setVertexLabelTransformer(transformer);
         vv.getRenderContext().setEdgeShapeTransformer(new EdgeShape.Line<String, Integer>());
-       // vv.getRenderContext().setVertexLabelTransformer(new ToStringLabeller<String>());
+        vv.getRenderContext().setVertexLabelTransformer(new ToStringLabeller<String>());
         vv.setVertexToolTipTransformer(transformtip);
         
         // Wenn auf Vertex geklickt wurde, dann wird die Funktion ausgefuehrt.
@@ -243,7 +245,7 @@ public class UI extends JApplet {
         });
 
     	final JTextField tf  = new JTextField("", 30);
-    	JButton button = new JButton("URL visualisieren");
+    	JButton button = new JButton("visualize URL");
     	button.setBackground(new Color(150,0,0));
     	button.setForeground(Color.white);
     	
@@ -287,25 +289,27 @@ public class UI extends JApplet {
 
             public void actionPerformed(ActionEvent e) {
             	if(expanded) {
-            		// TODO: Warum ist s unused?
-            		for(String s : otherNodes) {
-            			for(int edge : edgeList) {
-            				graph.removeEdge(edge);
-            			}
-            			for(String v : otherNodes) {
-            				graph.removeVertex(v);
-            			}
-            			vv.removeAll();
-                		newPaint();
-            		}
+        			for(int edge : edgeList) {
+        				graph.removeEdge(edge);
+        			}
+        			for(String v : otherNodes) {
+        				graph.removeVertex(v);
+        			}
+        			vv.removeAll();
+            		newPaint();
             		expanded = false;
             	}
             	else {
             		for(String s : otherNodes) {
-            			graph.addVertex(s);
-            			int num = edgeFactory.create();
-            			edgeList.add(num);
-            			graph.addEdge(num,"other", s);
+            			if(!graph.containsVertex(s)) {
+	            			graph.addVertex(s);
+	            			int num = edgeFactory.create();
+	            			edgeList.add(num);
+	            			graph.addEdge(num,"other", s);
+            			}
+            			else {
+            				
+            			}
             		}
             		vv.removeAll();
             		newPaint();
@@ -354,7 +358,17 @@ public class UI extends JApplet {
     	hyperView.setBackground(new Color(180,180,180));
         hyperView.addItemListener(new ItemListener(){
             public void itemStateChanged(ItemEvent e) {
-                hyperbolicViewSupport.activate(e.getStateChange() == ItemEvent.SELECTED);
+            	if(!hyperbola) {
+            		hyperbolicViewSupport.activate(e.getStateChange() == ItemEvent.SELECTED);
+            		hyperbola = true;
+            	}
+            	else{
+            		hyperbolicViewSupport.deactivate();
+            		hyperbola = false;
+            		final DefaultModalGraphMouse<String, Integer> graphMouse = new DefaultModalGraphMouse<String, Integer>();
+                    vv.setGraphMouse(graphMouse);
+                    graphMouse.setMode(ModalGraphMouse.Mode.PICKING);
+            	}
             }
         });
         
