@@ -133,6 +133,7 @@ public class UI extends JApplet {
     String root, startUrl;
     boolean expanded = false;
     boolean hyperbola = false;
+    boolean treeActive = false;
     LensSupport hyperbolicViewSupport;
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
@@ -260,18 +261,20 @@ public class UI extends JApplet {
     	radial.setBackground(new Color(180,180,180));
         radial.addItemListener(new ItemListener() {
              public void itemStateChanged(ItemEvent e) {
-                if(e.getStateChange() == ItemEvent.SELECTED) {
+                if(treeActive) {
                     LayoutTransition<String,Integer> lt = new LayoutTransition<String,Integer>(vv, treeLayout, radialLayout);
                     Animator animator = new Animator(lt);
                     animator.start();
                     vv.getRenderContext().getMultiLayerTransformer().setToIdentity();
                     vv.addPreRenderPaintable(rings);
+                    treeActive = false;
                 } else {
                     LayoutTransition<String,Integer> lt = new LayoutTransition<String,Integer>(vv, radialLayout, treeLayout);
                     Animator animator = new Animator(lt);
                     animator.start();
                     vv.getRenderContext().getMultiLayerTransformer().setToIdentity();
                     vv.removePreRenderPaintable(rings);
+                    treeActive = true;
                 }
                 vv.repaint();
             }});
@@ -490,9 +493,12 @@ public class UI extends JApplet {
     public void newPaint() {
 		radialLayout = new RadialTreeLayout<String,Integer>(graph);
         radialLayout.setSize(new Dimension(windowSizeX,windowSizeY));
-		treeLayout = new RadialTreeLayout<String,Integer>(graph);
-        treeLayout.setSize(new Dimension(windowSizeX,windowSizeY));
-        vv.setGraphLayout(radialLayout);
+		treeLayout = new TreeLayout<String,Integer>(graph);
+        //treeLayout.setSize(new Dimension(windowSizeX,windowSizeY));
+		if(!treeActive)
+			vv.setGraphLayout(radialLayout);
+		else
+			vv.setGraphLayout(treeLayout);
 		vv.repaint();
     }
     
