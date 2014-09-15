@@ -86,14 +86,23 @@ public class UI extends JApplet {
 	final int windowSizeY = 600;
 	
 	static final String instructions = 
-            "<html><body style=\"padding:20px;\">"+
-            "<h2><center>Instructions for Graphiti</center></h2>"+
-            "<br><ul><li>Hypyerbolic View</li>"+
-            "<li>Parse Tree in Realtime</li>"+
-            "<li>...</li></ul><br>"+
-            "<p>More Information...</p><br><hr><br>"+
-            "<p>This program was developed by:<br>Andre Karge and Sebastian Gottschlich<br>Bauhaus University Weimar - Summerterm 2014"
-            + "</body></html>";
+            "<html><body style=\"padding:10px;\">"+
+            "<h2><center>Instructions for GRAPHITI</center></h2>"
+            + "<b>Features:</b>"
+            + "<ul>"
+            + "<li>Realtime parsing</li>"
+            + "<li>Two layouts: Radial-Tree-Layout and Tree-Layout</li>"
+            + "<li>Focus & Context: Hyperbolic-View</li>"
+            + "<li>Zooming and Panning</li>"
+            + "</ul>"
+            + "<b>Interaction:</b>"
+            + "<ul>"
+            + "<li>STRG+LeftMouse: Set the picked vertex in the center</li>"
+            + "<li>Leftmouse-Click on a vertex, generate the childrens</li>"
+            + "<li>Mouseover a vertex: tooltip with a teaser, ...</li>"
+            + "<li>Switch the views by the 'Radial'-Button</li>"
+            + "</ul>"+
+            "<br><p style=\"color: gray;\">This program was developed by:<br>Andre Karge and Sebastian Gottschlich<br>Bauhaus University Weimar - Summerterm 2014<br>15.09.2014</body></html>";
     JDialog instDialog;
 
     Forest<String,Integer> graph;
