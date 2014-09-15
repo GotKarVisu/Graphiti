@@ -4,4 +4,5 @@ public class Article {
 	public String 	url 	= "";
 	public String 	titel 	= "";
 	public int 		count 	= 0;
+	public String	teaser	= "";
 }
