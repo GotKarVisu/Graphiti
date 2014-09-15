@@ -406,7 +406,7 @@ public class UI extends JApplet {
         // Control Vertices
             JPanel controlVertices = new JPanel();
             controlVertices.setBorder(BorderFactory.createTitledBorder("Control Vertices"));
-            controlVertices.add(toggleOther);
+            //controlVertices.add(toggleOther);
         	controlVertices.add(collapse);
         	controlVertices.add(expand);
         	controlVertices.add(modeBox);
@@ -453,8 +453,8 @@ public class UI extends JApplet {
 			pars2 = null;
 			setProgress((x+1)*10);
 		}
-		graph.addVertex("other");
-		graph.addEdge(edgeFactory.create(),title, "other");
+		//graph.addVertex("other");
+		//graph.addEdge(edgeFactory.create(),title, "other");
 		int sizeOther = (l.size()>10 ? l.size() : 10); 
 		for(int i=10; i<sizeOther; ++i) {
 			if(!graph.containsVertex(l.get(i).titel)) {

@@ -191,6 +191,15 @@ public class Parser {
 				break;
 			}
 		}
-		this.teaser = tmp;
+		StringBuilder sb = null;
+		if(tmp.length() > 300)
+			sb = new StringBuilder(tmp.substring(0,300));
+		else
+			sb = new StringBuilder(tmp.substring(0, tmp.length()));
+		int i=0;
+		while (i + 100 < sb.length() && (i = sb.lastIndexOf(" ", i + 100)) != -1) {		
+			sb.replace(i, i + 1, "<br>");
+		}
+		this.teaser = sb.toString() + " ...";
 	}
 }
