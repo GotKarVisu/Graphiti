@@ -54,6 +54,15 @@ public class Parser {
 	public String getURL() {
 		return this.url;
 	}
+	public String getTeaser() {
+		// TODO: Nicht von Anfang an, erst ab Artikel-Start
+		StringBuilder sb = new StringBuilder(this.text.substring(0,300));
+		int i = 0;
+		while (i + 100 < sb.length() && (i = sb.lastIndexOf(" ", i + 100)) != -1) {
+		    sb.replace(i, i + 1, "<br>");
+		}
+		return sb.toString()+"...";
+	}
 	public String getTitle() {
 		return this.title;
 	}
