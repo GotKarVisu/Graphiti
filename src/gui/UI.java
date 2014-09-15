@@ -82,8 +82,8 @@ import edu.uci.ics.jung.visualization.util.Animator;
 
 @SuppressWarnings("serial")
 public class UI extends JApplet {
-	final int windowSizeX = 800;
-	final int windowSizeY = 600;
+	final int windowSizeX = 500;
+	final int windowSizeY = 500;
 	
 	static final String instructions = 
             "<html><body style=\"padding:10px;\">"+
@@ -97,8 +97,8 @@ public class UI extends JApplet {
             + "</ul>"
             + "<b>Interaction:</b>"
             + "<ul>"
-            + "<li>STRG+LeftMouse: Set the picked vertex in the center</li>"
-            + "<li>Leftmouse-Click on a vertex, generate the childrens</li>"
+            + "<li>STRG+LeftMouse: Focus on the selected vertex</li>"
+            + "<li>Leftmouse-Click on a leaf node, generate the childrens</li>"
             + "<li>Mouseover a vertex: tooltip with a teaser, ...</li>"
             + "<li>Switch the views by the 'Radial'-Button</li>"
             + "</ul>"+
@@ -436,7 +436,7 @@ public class UI extends JApplet {
 		ArrayList<Article> l = parser.getList();
 		String title = parser.getTitle();
 		graph.addVertex(title);
-		int size = (l.size()>=10 ? 10 : l.size()); 
+		int size = (l.size()>=6 ? 6 : l.size()); 
 		for(int x=0; x < size; ++x) {
 			pars2 = new Parser();
 			pars2.setUrl(l.get(x).url);
