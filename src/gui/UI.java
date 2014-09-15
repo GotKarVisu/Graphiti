@@ -160,7 +160,7 @@ public class UI extends JApplet {
         vv.setBorder(border);
         
         vv.getRenderContext().setEdgeShapeTransformer(new EdgeShape.Line<String,Integer>());
-        vv.getRenderer().setVertexRenderer(new GradientVertexRenderer<String,Integer>(Color.lightGray, Color.gray, Color.white, Color.blue, vv.getPickedVertexState(), false));
+        vv.getRenderer().setVertexRenderer(new GradientVertexRenderer<String,Integer>(Color.decode("#F0F0F0"), Color.decode("#A0A0A0"), Color.white, Color.blue, vv.getPickedVertexState(), false));
 
         Transformer<String, String> transformtip = new Transformer<String, String>() {
             @Override public String transform(String arg0) {
@@ -420,6 +420,7 @@ public class UI extends JApplet {
 		Parser parser = new Parser(url);
 		Parser pars2 = null;
 		Parser pars3 = null;
+		Parser pars4 = null;
 		ArrayList<Article> l = parser.getList();
 		String title = parser.getTitle();
 		graph.addVertex(title);
@@ -438,47 +439,31 @@ public class UI extends JApplet {
 			ArrayList<Article> l1 = pars2.getList();
 			int size2 = (l1.size()>=5 ? 5 : l1.size()); 
 			for(int z=0; z < size2; ++z) {
-				pars3 = new Parser();
-				pars3.setUrl(l.get(x).url);
-				pars3.parse();
+				pars3 = new Parser(l.get(x).url);
 				String titel3 = l1.get(z).titel;
 				if(!graph.containsVertex(titel3)) {
+					pars4 = new Parser(l1.get(z).url);
 					graph.addVertex(titel3);
-					l1.get(z).teaser = pars3.getTeaser();
+					l1.get(z).teaser = pars4.getTeaser();
 					parsedGraph.add(l1.get(z));
 					graph.addEdge(edgeFactory.create(), titel2, titel3);
 				}
-				pars3 = null;
 			}
-			pars2 = null;
 			setProgress((x+1)*10);
 		}
-		//graph.addVertex("other");
-		//graph.addEdge(edgeFactory.create(),title, "other");
-		int sizeOther = (l.size()>10 ? l.size() : 10); 
-		for(int i=10; i<sizeOther; ++i) {
-			if(!graph.containsVertex(l.get(i).titel)) {
-				otherNodes.add(l.get(i).titel);
-//				graph.addVertex(l.get(i).titel);
-//				graph.addEdge(edgeFactory.create(), "other", l.get(i).titel);
-			}
-			
-		}
-		
-		//TODO: auto collapse
-//		PickedState st
-//		vv.setPickedVertexState();
     }
 
     private void parseChildrens(Article root) {
     	Parser parser = new Parser(root.url);
+    	Parser children = null;
 		ArrayList<Article> l = parser.getList();
 		int size = (l.size()>=5 ? 5 : l.size());
 		setProgress(1);
 		for(int x=0; x < size; ++x) {
 			if(!graph.containsVertex(l.get(x).titel)) {
+				children = new Parser(l.get(x).url);
 				graph.addVertex(l.get(x).titel);
-				l.get(x).teaser = parser.getTeaser();
+				l.get(x).teaser = children.getTeaser();
 				parsedGraph.add(l.get(x));
 				graph.addEdge(edgeFactory.create(), root.titel, l.get(x).titel);
 			}
