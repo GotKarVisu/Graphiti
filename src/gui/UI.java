@@ -145,7 +145,7 @@ public class UI extends JApplet {
         vv =  new VisualizationViewer<String,Integer>(radialLayout, new Dimension(windowSizeX,windowSizeY));
         
         vv.getRenderContext().setVertexLabelRenderer(new DefaultVertexLabelRenderer(Color.blue));
-        vv.getRenderContext().setVertexStrokeTransformer(new ConstantTransformer(new BasicStroke(2.0f)));
+        vv.getRenderContext().setVertexStrokeTransformer(new ConstantTransformer(new BasicStroke(0.5f)));
         vv.getRenderContext().setEdgeStrokeTransformer(new ConstantTransformer(new BasicStroke(1.5f)));
         vv.getRenderer().getVertexLabelRenderer().setPosition(Position.CNTR);
 
@@ -169,10 +169,10 @@ public class UI extends JApplet {
         		for(int x=0; x < size; ++x) {
         			if(parsedGraph.get(x).titel.equals(arg0)) {
         				node = parsedGraph.get(x);
-        				continue;
+        				return "<html><p><b>"+node.titel+"</b> (in '"+ graph.getParent(arg0).toString() +"': "+node.count+")<br>"+node.teaser+"<br><br>"+node.url+"</p></html>";
         			}
         		}
-        		return "<html><p><b>"+node.titel+"</b> (in '"+ graph.getParent(arg0).toString() +"': "+node.count+")<br>"+node.teaser+"<br><br>"+node.url+"</p></html>";
+        		return "";
             }
         };
 
@@ -424,13 +424,14 @@ public class UI extends JApplet {
 		String title = parser.getTitle();
 		graph.addVertex(title);
 		int size = (l.size()>=10 ? 10 : l.size()); 
-		for(int x=0; x < 10; ++x) {
+		for(int x=0; x < size; ++x) {
 			pars2 = new Parser();
 			pars2.setUrl(l.get(x).url);
 			pars2.parse();
 			String titel2 = l.get(x).titel;
 			if(!graph.containsVertex(titel2)) {
 				graph.addVertex(titel2);
+				l.get(x).teaser = pars2.getTeaser();
 				parsedGraph.add(l.get(x));
 				graph.addEdge(edgeFactory.create(), title, titel2);
 			}
@@ -443,6 +444,7 @@ public class UI extends JApplet {
 				String titel3 = l1.get(z).titel;
 				if(!graph.containsVertex(titel3)) {
 					graph.addVertex(titel3);
+					l1.get(z).teaser = pars3.getTeaser();
 					parsedGraph.add(l1.get(z));
 					graph.addEdge(edgeFactory.create(), titel2, titel3);
 				}
@@ -453,8 +455,8 @@ public class UI extends JApplet {
 		}
 		graph.addVertex("other");
 		graph.addEdge(edgeFactory.create(),title, "other");
-		int sizeOther = ((l.size())>=10 ? l.size() : 10); 
-		for(int i=10; i<=size; ++i) {
+		int sizeOther = (l.size()>10 ? l.size() : 10); 
+		for(int i=10; i<sizeOther; ++i) {
 			if(!graph.containsVertex(l.get(i).titel)) {
 				otherNodes.add(l.get(i).titel);
 //				graph.addVertex(l.get(i).titel);
@@ -473,9 +475,10 @@ public class UI extends JApplet {
 		ArrayList<Article> l = parser.getList();
 		int size = (l.size()>=5 ? 5 : l.size()); 
 		for(int x=0; x < size; ++x) {
-			parsedGraph.add(l.get(x));
 			if(!graph.containsVertex(l.get(x).titel)) {
 				graph.addVertex(l.get(x).titel);
+				l.get(x).teaser = parser.getTeaser();
+				parsedGraph.add(l.get(x));
 				graph.addEdge(edgeFactory.create(), root.titel, l.get(x).titel);
 			}
 		}
