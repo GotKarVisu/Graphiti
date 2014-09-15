@@ -473,7 +473,8 @@ public class UI extends JApplet {
     private void parseChildrens(Article root) {
     	Parser parser = new Parser(root.url);
 		ArrayList<Article> l = parser.getList();
-		int size = (l.size()>=5 ? 5 : l.size()); 
+		int size = (l.size()>=5 ? 5 : l.size());
+		setProgress(1);
 		for(int x=0; x < size; ++x) {
 			if(!graph.containsVertex(l.get(x).titel)) {
 				graph.addVertex(l.get(x).titel);
@@ -481,6 +482,7 @@ public class UI extends JApplet {
 				parsedGraph.add(l.get(x));
 				graph.addEdge(edgeFactory.create(), root.titel, l.get(x).titel);
 			}
+			setProgress((100/(size-1))*x);
 		}
 		newPaint();
     }
