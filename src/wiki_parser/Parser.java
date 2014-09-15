@@ -6,6 +6,7 @@ import java.util.regex.Pattern;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.parser.Tag;
 import org.jsoup.select.Elements;
 
 public class Parser {
@@ -14,6 +15,7 @@ public class Parser {
 	private ArrayList<Article> list;
 	private Document doc;
 	private String text;
+	private String teaser;
 	
 	public Parser() {
 		this.url = "";
@@ -43,6 +45,7 @@ public class Parser {
 		setTitle();
 		cleanList();
 		sort(list);
+		setTeaser();
 	}
 	
 	public void setUrl(String inUrl) {
@@ -56,6 +59,9 @@ public class Parser {
 	}
 	public ArrayList<Article> getList() {
 		return this.list;
+	}
+	public String getTeaser() {
+		return this.teaser;
 	}
 
 	private void parseDocument() {
@@ -174,5 +180,17 @@ public class Parser {
 		if(tmp.startsWith("https")) {
 			this.url = "http" + this.url.substring(5,tmp.length());
 		}
+	}
+	private void setTeaser() {
+		String tmp = "";
+		Element div = this.doc.getElementById("mw-content-text");
+		Elements children = div.children();
+		for(Element e : children) {
+			if(e.tagName().equals("p")) {
+				tmp = e.text();
+				break;
+			}
+		}
+		this.teaser = tmp;
 	}
 }
